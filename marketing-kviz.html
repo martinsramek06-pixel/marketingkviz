@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Marketing Kvíz</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', sans-serif; background: #fff; color: #222; }
+header { background: #1a73e8; color: #fff; padding: 16px 24px; display: flex; align-items: center; gap: 16px; }
+header h1 { font-size: 20px; font-weight: 600; }
+.badge { background: rgba(255,255,255,0.25); border-radius: 20px; padding: 3px 10px; font-size: 13px; }
+nav { display: flex; border-bottom: 2px solid #e8eaed; background: #fff; }
+nav button { flex: 1; padding: 12px; border: none; background: none; cursor: pointer; font-size: 14px; font-weight: 500; color: #666; border-bottom: 3px solid transparent; margin-bottom: -2px; transition: all .2s; }
+nav button.active { color: #1a73e8; border-bottom-color: #1a73e8; }
+nav button:hover { background: #f8f9fa; }
+.page { display: none; padding: 24px; max-width: 860px; margin: 0 auto; }
+.page.active { display: block; }
+
+/* SETUP */
+.setup-card { background: #f8f9fa; border-radius: 12px; padding: 24px; margin-bottom: 20px; }
+.setup-card h3 { font-size: 15px; margin-bottom: 14px; color: #444; }
+.btn-group { display: flex; flex-wrap: wrap; gap: 8px; }
+.btn-opt { padding: 8px 16px; border: 2px solid #dadce0; border-radius: 20px; background: #fff; cursor: pointer; font-size: 14px; transition: all .15s; }
+.btn-opt:hover { border-color: #1a73e8; color: #1a73e8; }
+.btn-opt.selected { border-color: #1a73e8; background: #e8f0fe; color: #1a73e8; font-weight: 600; }
+.btn-primary { background: #1a73e8; color: #fff; border: none; border-radius: 8px; padding: 12px 28px; font-size: 15px; cursor: pointer; font-weight: 600; }
+.btn-primary:hover { background: #1557b0; }
+.btn-primary:disabled { background: #ccc; cursor: not-allowed; }
+.source-label { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+.src-m162 { background: #e8f0fe; color: #1a73e8; }
+.src-p111 { background: #fce8e6; color: #c5221f; }
+
+/* QUIZ */
+#quiz-progress-bar { height: 6px; background: #e8eaed; border-radius: 3px; margin-bottom: 20px; }
+#quiz-progress-fill { height: 100%; background: #1a73e8; border-radius: 3px; transition: width .3s; }
+.quiz-meta { display: flex; justify-content: space-between; font-size: 13px; color: #666; margin-bottom: 8px; }
+.question-card { background: #fff; border: 2px solid #e8eaed; border-radius: 12px; padding: 24px; }
+.question-text { font-size: 16px; line-height: 1.5; margin-bottom: 20px; font-weight: 500; }
+.options { display: flex; flex-direction: column; gap: 10px; }
+.option-btn { display: flex; align-items: flex-start; gap: 12px; padding: 12px 16px; border: 2px solid #e8eaed; border-radius: 10px; background: #fff; cursor: pointer; text-align: left; font-size: 14px; line-height: 1.4; transition: all .15s; }
+.option-btn:hover:not(:disabled) { border-color: #1a73e8; background: #f0f4ff; }
+.option-btn .letter { font-weight: 700; color: #1a73e8; min-width: 20px; }
+.option-btn.correct { border-color: #34a853; background: #e6f4ea; }
+.option-btn.correct .letter { color: #34a853; }
+.option-btn.wrong { border-color: #ea4335; background: #fce8e6; }
+.option-btn.wrong .letter { color: #ea4335; }
+.option-btn:disabled { cursor: default; }
+.feedback { margin-top: 16px; padding: 12px 16px; border-radius: 8px; font-size: 14px; }
+.feedback.correct-fb { background: #e6f4ea; color: #1e7e34; }
+.feedback.wrong-fb { background: #fce8e6; color: #c5221f; }
+.explanation { margin-top: 8px; font-size: 13px; color: #555; font-style: italic; }
+.quiz-actions { margin-top: 20px; display: flex; gap: 12px; }
+.btn-secondary { background: #f8f9fa; color: #444; border: 2px solid #dadce0; border-radius: 8px; padding: 10px 20px; font-size: 14px; cursor: pointer; font-weight: 500; }
+.btn-secondary:hover { background: #e8eaed; }
+#wrong-counter { background: #fce8e6; color: #c5221f; border-radius: 20px; padding: 4px 12px; font-size: 13px; font-weight: 600; }
+
+/* RESULTS */
+.results-card { background: #f8f9fa; border-radius: 12px; padding: 32px; text-align: center; }
+.results-score { font-size: 48px; font-weight: 700; color: #1a73e8; }
+.results-label { font-size: 16px; color: #666; margin-top: 4px; }
+.results-stats { display: flex; justify-content: center; gap: 32px; margin: 24px 0; }
+.stat { text-align: center; }
+.stat-num { font-size: 28px; font-weight: 700; }
+.stat-num.green { color: #34a853; }
+.stat-num.red { color: #ea4335; }
+.stat-label { font-size: 13px; color: #666; }
+
+/* BROWSE */
+.search-bar { display: flex; gap: 8px; margin-bottom: 20px; }
+.search-bar input { flex: 1; padding: 10px 14px; border: 2px solid #dadce0; border-radius: 8px; font-size: 14px; outline: none; }
+.search-bar input:focus { border-color: #1a73e8; }
+.filter-row { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; font-size: 13px; color: #666; }
+.q-count { color: #888; font-size: 13px; margin-bottom: 12px; }
+.browse-item { border: 1px solid #e8eaed; border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; cursor: pointer; transition: all .15s; }
+.browse-item:hover { border-color: #1a73e8; background: #f8f9fa; }
+.browse-item .q-num { font-size: 12px; color: #888; margin-bottom: 4px; }
+.browse-item .q-text { font-size: 14px; font-weight: 500; }
+.browse-item .q-correct { font-size: 13px; color: #34a853; margin-top: 4px; }
+
+/* WRONG ANSWERS PAGE */
+.wrong-section { margin-bottom: 32px; }
+.wrong-section h3 { font-size: 16px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.wrong-section h3 span { background: #ea4335; color: #fff; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; }
+.wrong-item { border: 1px solid #f5c6cb; background: #fff5f5; border-radius: 8px; padding: 12px 14px; margin-bottom: 8px; font-size: 14px; }
+.wrong-item .wq-text { font-weight: 500; margin-bottom: 4px; }
+.wrong-item .wq-answer { color: #c5221f; font-size: 13px; }
+.wrong-item .wq-correct { color: #34a853; font-size: 13px; }
+.empty-state { text-align: center; padding: 48px; color: #aaa; }
+.empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+
+/* Multi-select */
+.multi-hint { font-size: 12px; color: #888; margin-bottom: 8px; font-style: italic; }
+
+/* Range selector */
+.range-selector { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>📚 Marketing Kvíz</h1>
+  <span class="badge" id="total-badge">273 otázek</span>
+  <span class="badge" id="wrong-counter-header" style="background:rgba(234,67,53,0.3);display:none">❌ <span id="wrong-count-h">0</span> špatně</span>
+</header>
+
+<nav>
+  <button class="active" onclick="showPage('setup')">🎯 Nový kvíz</button>
+  <button onclick="showPage('quiz')" id="nav-quiz" style="display:none">📝 Kvíz</button>
+  <button onclick="showPage('browse')">📖 Přehled otázek</button>
+  <button onclick="showPage('wrong')">❌ Špatné odpovědi</button>
+</nav>
+
+<div class="page active" id="page-setup">
+  <div class="setup-card">
+    <h3>📂 Zdroj otázek</h3>
+    <div class="btn-group" id="source-group">
+      <button class="btn-opt selected" data-value="all" onclick="selectOpt('source',this)">Vše (273)</button>
+      <button class="btn-opt" data-value="m162" onclick="selectOpt('source',this)">Marketing 162 <span class="source-label src-m162">162</span></button>
+      <button class="btn-opt" data-value="p111" onclick="selectOpt('source',this)">Primát 111 <span class="source-label src-p111">111</span></button>
+      <button class="btn-opt" data-value="wrong" onclick="selectOpt('source',this)">❌ Jen špatné odpovědi</button>
+    </div>
+  </div>
+  
+  <div class="setup-card">
+    <h3>🔢 Počet otázek v dávce</h3>
+    <div class="btn-group" id="batch-group">
+      <button class="btn-opt selected" data-value="25" onclick="selectOpt('batch',this)">25</button>
+      <button class="btn-opt" data-value="50" onclick="selectOpt('batch',this)">50</button>
+      <button class="btn-opt" data-value="75" onclick="selectOpt('batch',this)">75</button>
+      <button class="btn-opt" data-value="100" onclick="selectOpt('batch',this)">100</button>
+      <button class="btn-opt" data-value="all" onclick="selectOpt('batch',this)">Všechny</button>
+    </div>
+  </div>
+  
+  <div class="setup-card">
+    <h3>📋 Pořadí</h3>
+    <div class="btn-group" id="order-group">
+      <button class="btn-opt selected" data-value="sequential" onclick="selectOpt('order',this)">Postupně (1-25, 25-50...)</button>
+      <button class="btn-opt" data-value="random" onclick="selectOpt('order',this)">Náhodně</button>
+    </div>
+  </div>
+
+  <div class="setup-card" id="range-card">
+    <h3>📑 Rozsah otázek <span id="range-info" style="font-weight:400;color:#888;font-size:13px"></span></h3>
+    <div class="range-selector" id="range-buttons"></div>
+  </div>
+
+  <button class="btn-primary" id="start-btn" onclick="startQuiz()">▶ Spustit kvíz</button>
+</div>
+
+<div class="page" id="page-quiz">
+  <div id="quiz-progress-bar"><div id="quiz-progress-fill" style="width:0%"></div></div>
+  <div class="quiz-meta">
+    <span id="quiz-qnum">Otázka 1 / 25</span>
+    <span id="quiz-source-badge"></span>
+    <span id="wrong-counter">❌ 0 k opakování</span>
+  </div>
+  <div class="question-card">
+    <div class="question-text" id="quiz-question"></div>
+    <div class="multi-hint" id="multi-hint" style="display:none">⚡ Více správných odpovědí – vyber všechny správné a potvrď</div>
+    <div class="options" id="quiz-options"></div>
+    <div class="feedback" id="quiz-feedback" style="display:none"></div>
+    <div class="explanation" id="quiz-explanation" style="display:none"></div>
+  </div>
+  <div class="quiz-actions">
+    <button class="btn-primary" id="btn-confirm" onclick="confirmMulti()" style="display:none">✓ Potvrdit</button>
+    <button class="btn-primary" id="btn-next" onclick="nextQuestion()" style="display:none">Další →</button>
+    <button class="btn-secondary" onclick="endQuiz()">⏹ Ukončit</button>
+  </div>
+</div>
+
+<div class="page" id="page-results">
+  <div class="results-card">
+    <div class="results-score" id="res-score">0%</div>
+    <div class="results-label">Výsledek kvízu</div>
+    <div class="results-stats">
+      <div class="stat"><div class="stat-num green" id="res-correct">0</div><div class="stat-label">Správně</div></div>
+      <div class="stat"><div class="stat-num red" id="res-wrong">0</div><div class="stat-label">Špatně</div></div>
+      <div class="stat"><div class="stat-num" id="res-total">0</div><div class="stat-label">Celkem</div></div>
+    </div>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+      <button class="btn-primary" onclick="showPage('setup')">🔄 Nový kvíz</button>
+      <button class="btn-secondary" onclick="retryWrong()" id="retry-wrong-btn">❌ Opakovat špatné</button>
+      <button class="btn-secondary" onclick="showPage('wrong')">📋 Zobrazit špatné</button>
+    </div>
+  </div>
+</div>
+
+<div class="page" id="page-browse">
+  <div class="search-bar">
+    <input type="text" id="search-input" placeholder="🔍 Hledat otázku nebo klíčové slovo..." oninput="filterBrowse()">
+  </div>
+  <div class="filter-row">
+    Filtr:
+    <button class="btn-opt selected" data-value="all" onclick="selectBrowseFilter(this,'all')" style="padding:4px 12px">Vše</button>
+    <button class="btn-opt" data-value="m162" onclick="selectBrowseFilter(this,'m162')" style="padding:4px 12px">Marketing 162</button>
+    <button class="btn-opt" data-value="p111" onclick="selectBrowseFilter(this,'p111')" style="padding:4px 12px">Primát 111</button>
+  </div>
+  <div class="q-count" id="browse-count"></div>
+  <div id="browse-list"></div>
+</div>
+
+<div class="page" id="page-wrong">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+    <h2 style="font-size:18px">❌ Špatně zodpovězené otázky</h2>
+    <button class="btn-secondary" onclick="clearWrong()" style="font-size:13px">🗑 Vymazat vše</button>
+  </div>
+  <div id="wrong-list"></div>
+</div>
+
+<script>
+const QUESTIONS = [{"id": 1, "source": "Marketing 162", "text": "Mezi etapy cíleného marketingu NEPATŘÍ:", "options": {"A": "Tržní zacílení", "B": "Tržní umístění", "C": "Segmentace trhu", "D": "Brainstorming, astroturfing"}, "correct": ["D"], "explanation": ""}, {"id": 2, "source": "Marketing 162", "text": "Fáze cíleného marketingu NENÍ", "options": {"A": "situační analýza", "B": "tržní umístění", "C": "segmentace trhu", "D": "tržní zacílení"}, "correct": ["A"], "explanation": ""}, {"id": 3, "source": "Marketing 162", "text": "Způsob vnímání produktu zákazníky v porovnání s konkurenčními výrobky označujeme jako:", "options": {"A": "Tržní umístění", "B": "Psychografickou segmentaci", "C": "Brainstorming", "D": "Tržní zacílení"}, "correct": ["A"], "explanation": ""}, {"id": 4, "source": "Marketing 162", "text": "Frančíza patří mezi:", "options": {"A": "Diagonální marketingový systém", "B": "Horizontální marketingové systémy", "C": "Vertikální marketingové systémy", "D": "Progresivní marketingové systémy"}, "correct": ["C"], "explanation": ""}, {"id": 5, "source": "Marketing 162", "text": "Potřeby v Maslowově hierarchii potřeb jsou seřazeny od nejnižšího patra po nejvyšší jako:", "options": {"A": "Fyziologické potřeby, bezpečí, láska a přijetí, úcta, seberealizace", "B": "Fyziologické potřeby, seberealizace, bezpečí, láska a přijetí, úcta", "C": "Láska a přijetí, úcta, seberealizace, fyziologické potřeby, bezpečí", "D": "Bezpečí, fyziologické potřeby, láska a přijetí, úcta, seberealizace"}, "correct": ["A"], "explanation": ""}, {"id": 6, "source": "Marketing 162", "text": "Role při nákupním rozhodování na B2C trhu jsou:", "options": {"A": "Iniciátor, Kupující, Rozhodující, Ovlivňovatel, Uživatel", "B": "Iniciátor, Kupující, Rozhodující, Ovlivňovatel, Taktik", "C": "Iniciátor, Stratég, Rozhodující, Ovlivňovatel, Uživatel", "D": "Pouze rozhodující a kupující"}, "correct": ["A"], "explanation": ""}, {"id": 7, "source": "Marketing 162", "text": "Do psychografických kritérií segmentace nezařazujeme:", "options": {"A": "Životní styl", "B": "Příslušnost k určité sociální třídě", "C": "Bydliště, věk", "D": "Profesi"}, "correct": ["C"], "explanation": ""}, {"id": 8, "source": "Marketing 162", "text": "Situaci, kdy firma vyrábí 2 či více produktů, které se mohou lišit např. kvalitou, velikostí či jinými rysy, ale jsou nabízeny jedním propagačním mixem, označujeme jako:", "options": {"A": "Hromadný marketing", "B": "Tržně diferencovaný marketing", "C": "Koncentrovaný marketing", "D": "Výrobkově diferencovaný marketing"}, "correct": ["D"], "explanation": ""}, {"id": 9, "source": "Marketing 162", "text": "Získané dispozice člověka reagovat pozitivně či negativně vůči vybranému objektu označujeme jako:", "options": {"A": "Kultura", "B": "Hodnoty", "C": "Postoje", "D": "Učení"}, "correct": ["C"], "explanation": ""}, {"id": 10, "source": "Marketing 162", "text": "Určitou tendenci lidí přizpůsobovat získané informace svým představám nazýváme:", "options": {"A": "Osobní inklinace", "B": "Selektivní pozornost", "C": "Selektivní přepracování", "D": "Selektivní percepce"}, "correct": ["C"], "explanation": ""}, {"id": 11, "source": "Marketing 162", "text": "POS/POP materiály znamenají", "options": {"A": "Prodlouženou záruku", "B": "Reklamu v místě prodeje", "C": "Nadlinkové aktivity komunikace", "D": "Poprodejní servis vrámci rozšířeného produktu"}, "correct": ["B"], "explanation": ""}, {"id": 12, "source": "Marketing 162", "text": "Tzv. buzz marketing znamená:", "options": {"A": "Marketing zaměřený na šíření virálních kampaní", "B": "Šíření referencí tzv. šeptandou", "C": "Nový trend marketingu založený na šíření informací přes QR kódy", "D": "Ani jedna odpověď není správná"}, "correct": ["B"], "explanation": ""}, {"id": 13, "source": "Marketing 162", "text": "Porterův model pěti sil patří do:", "options": {"A": "Analýz zákazníka", "B": "Analýz konkurence", "C": "Obdoba SWOT analýzy", "D": "Portfolio analýz"}, "correct": ["B"], "explanation": ""}, {"id": 14, "source": "Marketing 162", "text": "Problematika teorie životního cyklu výrobku: vyberte správná tvrzení:", "options": {"A": "Nesouvisí smaticí BCG", "B": "Většinou produkt prochází třemi fázemi cyklu", "C": "Je znázorněna modelovou ,,S“ křivkou", "D": "Produkt vždy projde všemi fázemi cyklu"}, "correct": ["C"], "explanation": ""}, {"id": 15, "source": "Marketing 162", "text": "Podle požadavků na jeho definování odpovídá marketingovému cíli tato formulace:", "options": {"A": "Žádná odpověď není správná", "B": "Navrhnout vhodnější design výrobků pro zvýšení prodejů", "C": "Zvýšit hrubou marži podniku z 9 % na 13 % do roku 2021", "D": "Přejít zdistribuční cesty 3. Úrovně na 2. Úroveň"}, "correct": ["C"], "explanation": ""}, {"id": 16, "source": "Marketing 162", "text": "Výstupem SWOT analýzy je:", "options": {"A": "Analýza prodejů a tržního podílu", "B": "Porovnání skonkurencí a řešení příčin tohoto stavu", "C": "Přehled o příležitostech", "D": "Stanovení dalších marketingových strategických kroků podniku"}, "correct": ["D"], "explanation": ""}, {"id": 17, "source": "Marketing 162", "text": "Pro speciální sportovní výstroje (potápění, lední hokej, atd.–jakýkoliv speciální něco) se využívá:", "options": {"A": "Masově nediferencovaný marketing", "B": "Hromadný marketing", "C": "Tržně nediferencovaný marketing", "D": "Cílený koncentrovaný marketing"}, "correct": ["D"], "explanation": ""}, {"id": 18, "source": "Marketing 162", "text": "Do direkt marketingu NEPATŘÍ:", "options": {"A": "Katalogový prodej", "B": "Žádná odpověď není správná", "C": "Teleshopping", "D": "Direct mail"}, "correct": ["B"], "explanation": ""}, {"id": 19, "source": "Marketing 162", "text": "Značkou NEROZUMÍME identifikaci zboží určitého výrobce pomocí:", "options": {"A": "Symbolu", "B": "Jména", "C": "Tvaru", "D": "Hmotnosti, objemu, složení"}, "correct": ["D"], "explanation": ""}, {"id": 20, "source": "Marketing 162", "text": "Typickým příkladem extenzivního nákupního chování na B2C trhu je:", "options": {"A": "Nákup nového automobilu, nákup nového televizoru", "B": "Nákup nového trička", "C": "Nákup mléka pro výrobu sýrů", "D": "Koupě svačiny"}, "correct": ["A"], "explanation": ""}, {"id": 21, "source": "Marketing 162", "text": "Existence distribučních mezičlánků s výhradním právem prodeje výrobku na určitém území se nazývá distribucí:", "options": {"A": "exklusivní", "B": "selektivní", "C": "oprávněnou", "D": "maloobchodní"}, "correct": ["A"], "explanation": ""}, {"id": 22, "source": "Marketing 162", "text": "Do mezoprostředí řadíme:", "options": {"A": "kulturní vlivy", "B": "politické vlivy", "C": "konkurenční vlivy", "D": "ekonomické vlivy"}, "correct": ["C"], "explanation": ""}, {"id": 23, "source": "Marketing 162", "text": "Zásadní přehodnocení a radikální přeměnu podnikatelských procesů v podniku označujeme jako:", "options": {"A": "brainstorming", "B": "benchmarking", "C": "reengineering", "D": "outsourcing"}, "correct": ["C"], "explanation": ""}, {"id": 24, "source": "Marketing 162", "text": "Kreativní zpravidla nízkonákladový přístup v propagaci je typický pro marketing:", "options": {"A": "holistický", "B": "guerilový", "C": "společenský", "D": "vztahový"}, "correct": ["B"], "explanation": ""}, {"id": 25, "source": "Marketing 162", "text": "Jako tzv. „generické produkty“ označujeme zboží:", "options": {"A": "značkové", "B": "se složitým a nápaditým balením", "C": "s jednoduchými obaly, někdy bez možnosti identifikace výrobce", "D": "které bývají vyšší cenové hladiny"}, "correct": ["C"], "explanation": ""}, {"id": 26, "source": "Marketing 162", "text": "Podle modelu chování kupujícího lze koupi kuchyňské linky, koupi nového domu označit jako:", "options": {"A": "řešení omezeného problému", "B": "řešení extenzivního problému", "C": "nákup největšího užitku", "D": "automatické chování"}, "correct": ["B"], "explanation": ""}, {"id": 27, "source": "Marketing 162", "text": "Komponenty (rozšiřující efekty) komplexního produktu není:", "options": {"A": "servis", "B": "značka", "C": "distribuce", "D": "balení"}, "correct": ["C"], "explanation": ""}, {"id": 28, "source": "Marketing 162", "text": "V případě, že potřebujeme statisticky popsat závislost mezi proměnnými, které již známe z dřívějška, použijeme:", "options": {"A": "kvalitativní výzkum", "B": "kvantitativní výzkum", "C": "smíšený výzkum", "D": "experiment"}, "correct": ["B"], "explanation": ""}, {"id": 29, "source": "Marketing 162", "text": "Cenová strategie „pronikání na trh“ znamená:", "options": {"A": "prosazení stávajícího výrobku na trhu pomocí agresivních forem komunikace", "B": "prosazení nového produktu na trhu masovou propagací", "C": "proniknutí nového výrobku na trh snízkou cenou", "D": "proniknutí stávajícího produktu na nové trhy díky intenzivní distribuci"}, "correct": ["C"], "explanation": ""}, {"id": 30, "source": "Marketing 162", "text": "Z pohledu marketingového výzkumu jsou informace, které byly zjištěny a zpracovány pro jiný účel dříve, označovány jako zdroje", "options": {"A": "bivalentní", "B": "sekundární", "C": "primární", "D": "historické"}, "correct": ["B"], "explanation": ""}, {"id": 31, "source": "Marketing 162", "text": "Skupina (sociální útvar), která vyvolává touhu jedince být jejím příslušníkem, a má silný psychologický vliv na jednotlivce, se nazývá:", "options": {"A": "podmíněná", "B": "(aspirační) referenční", "C": "doporučující", "D": "hodnotová"}, "correct": ["B"], "explanation": ""}, {"id": 32, "source": "Marketing 162", "text": "BCG (Boston Consulting Group) matice zkoumá:", "options": {"A": "tempo růstu trhu a relativní tržní podíl", "B": "atraktivitu odvětví a konkurenční pozici", "C": "atraktivitu odvětví a tempo růstu trhu", "D": "relativní tržní podíl a konkurenční pozici"}, "correct": ["A"], "explanation": ""}, {"id": 33, "source": "Marketing 162", "text": "Tzv. „kanibalizaci výrobku“ označujeme situaci, kdy:", "options": {"A": "nový výrobek zvyšuje svůj prodej na úkor výrobku existujícího", "B": "před zavedením nového výrobku stáhne firma existující výrobek z trhu", "C": "existující výrobek brání prosadit se inovovanému výrobku", "D": "konkurence přijde se stejným výrobkem pod jinou značkou na trh"}, "correct": ["A"], "explanation": ""}, {"id": 34, "source": "Marketing 162", "text": "Porterův model pěti sil NEOBSAHUJE:", "options": {"A": "hrozbu nově vstupujících konkurentů", "B": "hrozbu změny ekonomické situace vzemi", "C": "hrozbu náhražek", "D": "hrozbu rostoucí vyjednávací síly zákazníků"}, "correct": ["B"], "explanation": ""}, {"id": 35, "source": "Marketing 162", "text": "Při strategii penetrace trhu se s ohledem na konkurenci běžně stanovují ceny", "options": {"A": "co nejvyšší", "B": "ve strategii penetrace jde o něco zcela jiného", "C": "co nejnižší", "D": "vrámci produktového portfolia smaximální ziskovou marží"}, "correct": ["C"], "explanation": ""}, {"id": 36, "source": "Marketing 162", "text": "Matice GE je založena na proměnných:", "options": {"A": "konkurenční postavení a atraktivita trhu", "B": "relativní tržní podíl a velikosti trhu", "C": "zisk a časový interval", "D": "atraktivita trhu a tržby zprodejů"}, "correct": ["A"], "explanation": ""}, {"id": 37, "source": "Marketing 162", "text": "Tzv. podchycený trh tvoří:", "options": {"A": "zákazníci, kteří již daný produkt vlastní", "B": "potenciální trh, který není saturován", "C": "zákazníci, kteří jsou oslovení propagací a uvažují o koupi", "D": "zákazníci, kteří mají potřebu daný produkt vlastnit"}, "correct": ["A"], "explanation": ""}, {"id": 38, "source": "Marketing 162", "text": "Mezi základní metody stanovení ceny řadíme:", "options": {"A": "dle konkurence", "B": "prémiové ceny", "C": "pomocí lineární regrese", "D": "odhadem"}, "correct": ["A"], "explanation": ""}, {"id": 39, "source": "Marketing 162", "text": "Do podpory prodeje jakožto nástroje marketingové komunikace NELZE zahrnout:", "options": {"A": "věrnostní programy", "B": "loterie", "C": "ochutnávky", "D": "reklamu v televizi"}, "correct": ["D"], "explanation": ""}, {"id": 40, "source": "Marketing 162", "text": "Telemarketing řadíme mezi nástroje:", "options": {"A": "sponzoringu", "B": "přímého marketingu", "C": "reklamy", "D": "podpory prodeje"}, "correct": ["B"], "explanation": ""}, {"id": 41, "source": "Marketing 162", "text": "Sdílený marketing lze charakterizovat jako:", "options": {"A": "marketingové strategie sdílené dvěma konkurenty", "B": "společné distribuční cesty pro více firem", "C": "marketing orientovaný na okamžitý efekt", "D": "koncept charity, vněmž jsou výrazně zapojeni i zákazníci"}, "correct": ["D"], "explanation": ""}, {"id": 42, "source": "Marketing 162", "text": "Součástí analýzy mezoprostředí NENÍ:", "options": {"A": "analýza potenciálních dodavatelů", "B": "analýza legislativních předpisů", "C": "analýza mínění veřejnosti", "D": "analýza konkurenčních aktivit"}, "correct": ["B"], "explanation": ""}, {"id": 43, "source": "Marketing 162", "text": "Pro chování kupujících na průmyslových trzích je typické", "options": {"A": "odvozená poptávka", "B": "převaha emocionálních aspektů", "C": "poptávka subjektů je cenově velmi pružná", "D": "malý počet účastníků rozhodovacího procesu"}, "correct": ["A"], "explanation": ""}, {"id": 44, "source": "Marketing 162", "text": "Porterův model pěti sil patří do:", "options": {"A": "portfolio analýz", "B": "obdoba SWOT analýzy", "C": "analýz mezoprostředí", "D": "analýz zákazníka"}, "correct": ["C"], "explanation": ""}, {"id": 45, "source": "Marketing 162", "text": "Soutěže (např. dětské hřiště od Rákosníčka –Lidl, apod.) řadíme v rámci marketingového mixu do:", "options": {"A": "ceny", "B": "produktu", "C": "distribuce", "D": "komunikace"}, "correct": ["D"], "explanation": ""}, {"id": 46, "source": "Marketing 162", "text": "Životní cyklus produktu má přímou souvislost s:", "options": {"A": "mystery shoppingem", "B": "benchmarketingem", "C": "portfolio analýzou (BCG)", "D": "product placementem"}, "correct": ["C"], "explanation": ""}, {"id": 47, "source": "Marketing 162", "text": "V rámci nepřímé distribuce se využívá:", "options": {"A": "jakýkoliv počet mezičlánků", "B": "vždy služeb velkoobchodu", "C": "vždy přesně jeden mezičlánek", "D": "nevyužívá se žádný mezičlánek"}, "correct": ["A"], "explanation": ""}, {"id": 48, "source": "Marketing 162", "text": "Přehled skladových zásob vybrané firmy patří pro vybranou firmu mezi:", "options": {"A": "sekundární externí zdroj informací", "B": "primární interní zdroj informací", "C": "primární externí zdroj informací", "D": "sekundární interní zdroj informací"}, "correct": ["B"], "explanation": ""}, {"id": 49, "source": "Marketing 162", "text": "Holistická koncepce marketingu NEzahrnuje", "options": {"A": "integrovaný marketing", "B": "společensky odpovědný marketing", "C": "prodejní marketing", "D": "vztahový marketing"}, "correct": ["C"], "explanation": ""}, {"id": 50, "source": "Marketing 162", "text": "Mezi současné marketingové trendy NEpatří", "options": {"A": "virální kampaně", "B": "výrobní podnikatelská koncepce", "C": "sociální marketing", "D": "společenská zodpovědnost"}, "correct": ["B"], "explanation": ""}, {"id": 51, "source": "Marketing 162", "text": "Šíře výrobního sortimentu je dána:", "options": {"A": "celkovým počtem výrobků", "B": "počtem výrobních (výrobkových, produktových) řad", "C": "rozměry daného produktu", "D": "počtem typu výrobku"}, "correct": ["B"], "explanation": ""}, {"id": 52, "source": "Marketing 162", "text": "Prvním krokem při přípravě marketingového výzkumu je:", "options": {"A": "sběr dat", "B": "statistické zpracování", "C": "stanovení cíle výzkumu", "D": "výběr metod výzkumu"}, "correct": ["C"], "explanation": ""}, {"id": 53, "source": "Marketing 162", "text": "Na vrcholu Maslowovy hiearchiepotřeb jsou potřeby:", "options": {"A": "uznání", "B": "seberealizace", "C": "fyziologické", "D": "společenské"}, "correct": ["B"], "explanation": ""}, {"id": 54, "source": "Marketing 162", "text": "Situační analýza NEZAHRNUJE:", "options": {"A": "Anssoffovu matici", "B": "benchmarking", "C": "PEST analýzu", "D": "SWOT analýzu"}, "correct": ["A"], "explanation": ""}, {"id": 55, "source": "Marketing 162", "text": "Mezi základní metody výzkumu NEPATŘÍ:", "options": {"A": "focus groups", "B": "experiment", "C": "dotazování", "D": "pozorování"}, "correct": ["A"], "explanation": ""}, {"id": 56, "source": "Marketing 162", "text": "Do přímého marketingu NEpatří:", "options": {"A": "direct mailing", "B": "marketing na sociálních sítích", "C": "katalogový prodej", "D": "teleshopping"}, "correct": ["B"], "explanation": ""}, {"id": 57, "source": "Marketing 162", "text": "Analýza portfolia slouží k:", "options": {"A": "zjištění o postavení výrobku mezi konkurenčními produkty", "B": "zjištění obratu firmy", "C": "rozboru postavení produktu nebo skupiny produktů mezi ostatními produkty v rámci jednoho podniku", "D": "identifikaci hlavních vnějších vlivů působících na prodej jednotlivých výrobků", "E": "hodnocení kvality produktů a služeb", "F": "rozhodování o vhodné tržně-produktové strategii podniku a hodnocení souvisejících rizik"}, "correct": ["A", "C", "D", "F"], "explanation": ""}, {"id": 58, "source": "Marketing 162", "text": "Tzv. ,,tradiční“ marketing se opírá o:", "options": {"A": "Dialog a zpětnou vazbu", "B": "Loajalitu zákazníka", "C": "Individualizaci zákazníka", "D": "Standardizaci produktů", "E": "Maximalizaci počtu zákazníků", "F": "Masovou výrobu"}, "correct": ["A", "B", "C", "D", "E", "F"], "explanation": ""}, {"id": 59, "source": "Marketing 162", "text": "Podnikové účetnictví jako zdroj MTGA informací patří mezi:", "options": {"A": "Primární zdroje informací", "B": "Sekundární vnitřní zdroje informací", "C": "Sekundární vnější zdroje informací"}, "correct": ["B"], "explanation": ""}, {"id": 60, "source": "Marketing 162", "text": "Neziskové organizace", "options": {"A": "Vytvářejí stejný mtg program jako ziskové organizace", "B": "Vytvářejí podobný mtg program jako ziskové organizace", "C": "Vytvářejí 3 mtg programy"}, "correct": ["B"], "explanation": ""}, {"id": 61, "source": "Marketing 162", "text": "Produktem neziskových organizací bývá nejčastěji", "options": {"A": "Změněné chování klientů ( změněný člověk, skupina, veřejnost )", "B": "Hmotné produkty řešící problémy klientů", "C": "Finanční pomoc klientům"}, "correct": ["C"], "explanation": ""}, {"id": 62, "source": "Marketing 162", "text": "Nutnost uplatňovat mtg aktivity se objevila", "options": {"A": "již v rodové společnosti", "B": "Na přelomu 19 a 20 století", "C": "Jakmile se mezi výrobou a spotřebou vklínil obchod"}, "correct": ["B"], "explanation": ""}, {"id": 63, "source": "Marketing 162", "text": "V první vývojové fázi mtg se řešily", "options": {"A": "Vnitřní problémy firmy", "B": "Problémy zákazníků", "C": "Soulad mezi problémy firmy, zákazníků a celé společnosti"}, "correct": ["B"], "explanation": ""}, {"id": 64, "source": "Marketing 162", "text": "Převyšuje-li poptávka nabídku neúnosným způsobem, pak organizace uplatňují:", "options": {"A": "Vnitřní mtg", "B": "Sociální mtg", "C": "Demarketing"}, "correct": ["C"], "explanation": ""}, {"id": 65, "source": "Marketing 162", "text": "Tak zvaná „mtg zaslepenost“ je typická pro", "options": {"A": "V podnikatelskou koncepci", "B": "Výrobkovou podnikatelskou koncepci", "C": "Prodejní podnikatelskou koncepci"}, "correct": ["B"], "explanation": ""}, {"id": 66, "source": "Marketing 162", "text": "Strategie diferenciace produktu se opírá mimo jiné", "options": {"A": "O nákup modernější a výkonnější technologie", "B": "O zaměření na konkrétní segment", "C": "O poskytování doplňkových služeb"}, "correct": ["C"], "explanation": ""}, {"id": 67, "source": "Marketing 162", "text": "Když mnoho výrobců produkuje diferencované produkty, pak se jedná o", "options": {"A": "Čistou konkurenci", "B": "Čistý oligopol", "C": "Oligopol", "D": "Monopolistickou konkurenci"}, "correct": ["D"], "explanation": ""}, {"id": 68, "source": "Marketing 162", "text": "Anylýza portfolia – model BCG vychází ze vztahu", "options": {"A": "Životní cyklus výrobku a podíl na trhu", "B": "Roční tempo růstu tržeb a podílu na trhu", "C": "Životní cyklus výrobků a roční tempo růstu tržeb"}, "correct": ["B"], "explanation": ""}, {"id": 69, "source": "Marketing 162", "text": "Kvadrant otazník v matici portfolia (model BSG) odpovídá těmto charakterům", "options": {"A": "Produkty mají nízký podíl na trhu, tento trh však velmi rychle roste, předpokladem je zde tzv. negativní tok příjmů", "B": "Podnik ovládá velkou část trhu, rozsah tohoto trhu rychle roste, tvorba a spotřeba fin.prostředků jsou zhruba v rovnováze ( nulový zisk )", "C": "Firma stále ještě ovládá velkou část trhu, ale tento trh roste pomalu náklady firmy jsou zpravidla nižší než náklady konkurence, výrobky vytvářejí zisk", "D": "Produkty zahrnují malý podíl na pomalu rostoucím trhu, tyto výrobky sice nespotřebovávají ale ani nevytvářejí velké množství finančních prostředků, nebývají příliš ziskové"}, "correct": ["A"], "explanation": ""}, {"id": 70, "source": "Marketing 162", "text": "Čtyři typy strategií růstu tržeb jsou vymezeny vztahem mezi", "options": {"A": "Ročním tempem růstu tržeb a podílem na trhu", "B": "Životním cyklem výrobku a podílem na trhu", "C": "Zda firma vstupuje na stávající ( nebo nový ) trh se stávajícím ( nebo novým ) produktem"}, "correct": ["A"], "explanation": ""}, {"id": 71, "source": "Marketing 162", "text": "Strategie „penetrace trhu“ je charakterizována:", "options": {"A": "Průnikem na nové trhy ( vyhledávání nové skupiny zákazníků ) a do dalších geografických oblastí", "B": "Firma produkuje pro stávající zákazníky nové produkty", "C": "Firma zvyšuje svůj podíl na současném trhu, aniž by došlo ke změně produktu"}, "correct": ["C"], "explanation": ""}, {"id": 72, "source": "Marketing 162", "text": "Výzkum, který poskytuje přesné informace o konkrétních aspektech tržního prostředí se nazývá", "options": {"A": "Kauzální výzkum", "B": "Explorační výzkum", "C": "Deskriptivní (popisný) výzkum"}, "correct": ["C"], "explanation": ""}, {"id": 73, "source": "Marketing 162", "text": "Přímé otázky jsou vhodné při zjišťování informací", "options": {"A": "O minulém chování, o věcných faktorech současnosti, o nákupních úmyslech a preferencích", "B": "O budoucím chování, o podmíněných přáních, o motivaci v jednání (proč\\*)"}, "correct": ["A"], "explanation": ""}, {"id": 74, "source": "Marketing 162", "text": "Sématický diferenciál", "options": {"A": "Je jakákoliv baterie škál", "B": "Je uspořádaná baterie škál s faktory hodnotícími, potenčními a faktory aktvity", "C": "Je kombinací škál verbálních, numerických a grafických"}, "correct": ["B"], "explanation": ""}, {"id": 75, "source": "Marketing 162", "text": "Prověření vhodné stylizace dotazníku před jeho použitím ve výzkumu se nazývá", "options": {"A": "Verifikace dotazníku", "B": "Validita dotazníku", "C": "Pilotáž dotazníku"}, "correct": ["C"], "explanation": ""}, {"id": 76, "source": "Marketing 162", "text": "Marketingoví pracovníci chápou trh jako:", "options": {"A": "Souhrn všech nabízejících, skutečně kupujících a potenciálně kupujících", "B": "Souhrn všech nabízejících a skutečně kupujících", "C": "Souhrn všech skutečně kupujících a potencionálně kupujících"}, "correct": ["C"], "explanation": ""}, {"id": 77, "source": "Marketing 162", "text": "Strategie dle životních cyklů výrobku", "options": {"A": "V období otazníků je třeba volit strategii omezené propagace, ale zvyšování podpory prodeje", "B": "V období hvězd je třeba volit strategii pro rychlý růst podílu na trhu", "C": "Vobdobí krav je třeba volit strategii selektivní podpory jen pro nejperspektivnější produkty"}, "correct": ["B"], "explanation": ""}, {"id": 78, "source": "Marketing 162", "text": "Strategie dle kooperace na trhu", "options": {"A": "Konfrontační strategie umožňuje firmám spolupracovat i když si konkurují", "B": "Kooperační strategie znamená, že firmy, které si konkurují, míří záměrně každý na jiné místo na trhu", "C": "Úhybná strategie znamená, že firmy, které si konkurují, míří záměrně každý na jiné místo na trhu"}, "correct": ["C"], "explanation": ""}, {"id": 79, "source": "Marketing 162", "text": "Strategie dle ekonomické situace", "options": {"A": "V období inflace je vhodná strategie rozšíření sortimentu a snížení cen", "B": "V období inflace je vhodná strategie zúžení sortimentu a snížení cen, zavedení ekonomické varianty produktu", "C": "V období recese je vhodná strategie zúžení sortimentu a zvýšení cen, zavedení luxusní varianty produktu"}, "correct": ["B"], "explanation": ""}, {"id": 80, "source": "Marketing 162", "text": "Pro sílu značky NEPLATÍ:", "options": {"A": "Síla značky se měří z hlediska distribučního pokrytí trhu", "B": "Na sílu značky nemá vliv interní marketing", "C": "Síla značky se měří z hlediska finančního"}, "correct": ["B"], "explanation": ""}, {"id": 81, "source": "Marketing 162", "text": "Typy značek", "options": {"A": "Souhrnná značka je značka společnosti, která slouží pro řady podobných výrobků s vlastními obchodními značkami", "B": "Značka výrobce se jinak nazývá firemní značka", "C": "Licenční značka je soukromá značka prodejce"}, "correct": ["A"], "explanation": ""}, {"id": 82, "source": "Marketing 162", "text": "Pro řízení značky je NEPRAVDA:", "options": {"A": "Obchodní jméno se nedá kombinovat s individuálním jménem", "B": "Značku je vhodné zřizovat také když spotřebitel nemůže posoudit kvalitu výrobku", "C": "Značka je vhodná i pro komoditní zboží"}, "correct": ["A"], "explanation": ""}, {"id": 83, "source": "Marketing 162", "text": "Poptávka", "options": {"A": "Je závislost množství poptávaného zboží na síle reklamní kampaně", "B": "Je závislost množství zboží které se kupuje v určitém období a jeho ceny..", "C": "Je množství zboží nebo služeb, které jsou spotřebitelé ochotni a schopni koupit za určitou cenu během určitého časového období."}, "correct": ["C"], "explanation": ""}, {"id": 84, "source": "Marketing 162", "text": "Rozhodování o službách servisního mixu musí řešit tyto problémy:", "options": {"A": "Co bude považováno za vlastní produkt a co za rozšířený produkt", "B": "Jaké služby do servisního mixu zahrnout, jakým distribučním řetězcem je realizovat", "C": "Jaké služby do servisního mixu zahrnout, na jaké úrovni je nabízet, v jaké formě je poskytovat"}, "correct": ["C"], "explanation": ""}, {"id": 85, "source": "Marketing 162", "text": "Mezi základní charakteristiky služby jako produktu patří:", "options": {"A": "Neskladovatelnost (pomíjivost), neodlučitelnost od zdroje poskytování, proměnlivost v kvalitě", "B": "Závislost na technologii, náročnost spotřebitele, obtížnější ziskovost", "C": "Závislost na technologii, náročnost spotřebitele, obtížnější ziskovost, dostupnost"}, "correct": ["A"], "explanation": ""}, {"id": 86, "source": "Marketing 162", "text": "Ke kontrole stálosti kvality poskytovaných služeb mohou servisní firmy uplatňovat:", "options": {"A": "Sledování životního cyklu služby ve všech jeho etapách", "B": "Výběr a trénink pracovníků poskytujících služby a monitorování spokojenosti zákazníků", "C": "Monitorování názorů distributorů"}, "correct": ["B"], "explanation": ""}, {"id": 87, "source": "Marketing 162", "text": "Proč zatím uplatňování marketingu v sektoru služeb zaostává za výrobními podniky?", "options": {"A": "Protože jde většinou o malé firmy, které to pokládají za nákladné a poptávka po službách dosud často převyšuje nabídku", "B": "Protože si servisní firmy marketingové myšlení dosud neosvojily", "C": "Protože jsou služby nehmotné a nedají se skladovat."}, "correct": ["A"], "explanation": ""}, {"id": 88, "source": "Marketing 162", "text": "Pokud firma získá nové výrobky akvizicí, pak:", "options": {"A": "Využila výzkumu konkurenčního produktu a zdokonalila svůj vlastní výrobek", "B": "Nezákonně falzifikovala konkurenční výrobek", "C": "Buď koupila jinou firmu, nebo koupila její patent nebo koupila její licenci"}, "correct": ["C"], "explanation": ""}, {"id": 89, "source": "Marketing 162", "text": "Proces vývoje nového produktu obsahuje tyto etapy:", "options": {"A": "technická příprava – projekční příprava – tvorba prototypu – ekonomická analýza – zavedení na trh", "B": "Průzkum – posouzení námětů – vytvoření a ověření koncepce – ekonomická analýza – vývoj – test nového produktu – komercializace", "C": "Průzkum – životní cyklus výrobku – analýza portfolia – zavedení na trh"}, "correct": ["B"], "explanation": ""}, {"id": 90, "source": "Marketing 162", "text": "Strategie zavádění nových výrobků na trh vycházejí ze vztahu mezi:", "options": {"A": "Náklady na propagaci a cenou výrobku", "B": "Ročním tempem růstu a podílu na trhu", "C": "Počtem výrobců a diferencovanými (nediferencovanými) produkty"}, "correct": ["B"], "explanation": ""}, {"id": 91, "source": "Marketing 162", "text": "Životní cyklus výrobku je dán vztahem mezi:", "options": {"A": "Ročním tempem růstu tržeb a podílem na trhu", "B": "Růstem tržeb a časem", "C": "Náklady na propagaci a cenou produktu"}, "correct": ["B"], "explanation": ""}, {"id": 92, "source": "Marketing 162", "text": "Ve fázi zralosti životního cyklu výrobku mohou firmy využívat těchto strategií:", "options": {"A": "Strategie modifikace produktu, strategie modifikace trhu, aktivní využívání mtg. mixu", "B": "SWOT analýzy, analýzy portfolia, strategii investičních nákladů", "C": "Strategii hromadné výroby, nízkých nákladů a střídmé propagace"}, "correct": ["A"], "explanation": ""}, {"id": 93, "source": "Marketing 162", "text": "S neelastickou poptávkou se setkáváme zejména u zboží:", "options": {"A": "Každodenní potřeby", "B": "Které je snadno nahraditelné a kupuje se často", "C": "Které je obtížně nahraditelné, kupuje se jen občas a u luxusního a prestižního zboží"}, "correct": ["A"], "explanation": ""}, {"id": 94, "source": "Marketing 162", "text": "Definice marketingu", "options": {"A": "Marketing je reklama zaměřená vždy na ekonomický zisk", "B": "Marketing je aktivita, která se snaží tvořit zisk prostřednictvím spokojenosti zákazníka", "C": "Základem marketingu je snaha změnit kupní chování zákazníka"}, "correct": ["B"], "explanation": ""}, {"id": 95, "source": "Marketing 162", "text": "Marketing jako funkce ve firmě", "options": {"A": "Marketingová podpora prodejního úseku je samostatná činnost zařazená v podřízení obchodního úseku", "B": "Marketingová podpora prodejního úseku je činnost prováděná vybranými obchodníky v prodejním úseku", "C": "Marketingová podpora prodejního úseku je samostatná činnost zařazená mimo obchodní úsek"}, "correct": ["B"], "explanation": ""}, {"id": 96, "source": "Marketing 162", "text": "Komponenty plánu", "options": {"A": "Výběr konkrétního marketingového mixu není součástí marketingového plánu", "B": "Výběr poslání firmy je součástí mkt. Plánu", "C": "Určení způsobu kontroly plnění plánu je součástí mkt. Plánu"}, "correct": ["C"], "explanation": ""}, {"id": 97, "source": "Marketing 162", "text": "Interní analýza", "options": {"A": "Interní analýza je vždy prováděna z interních zdrojů informací", "B": "Součástí interní analýzy je analýza dosavadní strategie", "C": "Součástí interní analýzy není analýza tržní pozice"}, "correct": ["B"], "explanation": ""}, {"id": 98, "source": "Marketing 162", "text": "SWOT analýza", "options": {"A": "Příležitosti firmy se nacházejí vně podniku", "B": "Úkolem swot analýzy je eleminovat ohrožení příležitostmi podniku", "C": "Slabé stránky podniku je potřeba spojit se silnými stránkami podniku"}, "correct": ["A"], "explanation": ""}, {"id": 99, "source": "Marketing 162", "text": "Prostředí firmy", "options": {"A": "Součástí mezoprostředí jsou dodavatelé firmy", "B": "Součástí makroprostředí jsou konkurenti firmy", "C": "Součástí mezoprostředí je technologie firmy"}, "correct": ["A"], "explanation": ""}, {"id": 100, "source": "Marketing 162", "text": "Analýza trhu", "options": {"A": "výsledkem rozdílné poptávky bývá rozdílné kupní chování spotřebitelů", "B": "dodatečná poptávka vzniká, když vyměňuji starý výrobek za nový", "C": "průmysloví zákazníci kupují vždy průmyslové zboží či služby"}, "correct": ["A"], "explanation": ""}, {"id": 101, "source": "Marketing 162", "text": "Určování podílu na trhu", "options": {"A": "Tržní podíl = kumulativní proniknutí *podíl opakovaného nákupu* index míry spotřeby", "B": "Tržní podíl = kumulativní proniknutí\\* podíl zkušebního nákupu \\*index míry proniknutí", "C": "Tržní podíl = kumulativní spotřeba \\* podíl opakovaného nákupu \\*index míry proniknutí"}, "correct": ["A"], "explanation": ""}, {"id": 102, "source": "Marketing 162", "text": "Specifika průmyslového trhu", "options": {"A": "Průmyslový trh je definován jako souhrn poptávek po průmyslových výrobcích", "B": "Průmyslový trh je místo transformace základních surovin, polotovarů a komponentů na finální výrobek", "C": "Průmyslový trh je součástí trhu celého trhu spotřebitelského"}, "correct": ["B"], "explanation": ""}, {"id": 103, "source": "Marketing 162", "text": "Teorie průmyslového řetězce", "options": {"A": "Integrace znamená přebírání funkce následujícího či předchozího článku průmyslového řetězce", "B": "Specializace znamená, že se firma zbavuje části řetězce, kterou nahradí externím dodavatelem", "C": "Zpětná integrace znamená přebírání funkce následujícího článku průmyslového řetězce"}, "correct": ["A"], "explanation": ""}, {"id": 104, "source": "Marketing 162", "text": "Porterova teorie konkurenčních sil", "options": {"A": "Výnosnost průmyslového řetězce závisí na síle přímé konkurence v sektoru, na síle konkurence nově přicházející, síle působení substitutů a na vyjednávací síle kupujících a dodavatelů", "B": "Výnosnost průmyslového řetězce závisí na výši cen v průmyslovém sektoru, síle přímé konkurence v sektoru, síle působení substitutů a na vyjednávací síle kupujících a dodavatelů", "C": "Výnosnost průmyslového řetězce závisí na velikosti trhu, na síle konkurence nove přicházející, na síle působení substitutů a na vyjednávací síle kupujících a dodavatelů"}, "correct": ["A"], "explanation": ""}, {"id": 105, "source": "Marketing 162", "text": "Distribuční politika", "options": {"A": "Distribuční politika neřeší služby zákazníkům", "B": "Distribuční politika neřeší velikost prodejních míst", "C": "Neřeší inovace produktů"}, "correct": ["C"], "explanation": ""}, {"id": 106, "source": "Marketing 162", "text": "Úroveň distribučních kanálů", "options": {"A": "Ve fázi zavádění výrobku na trh se často využívá prodej s zprostředkovateli", "B": "Ve fázi zralosti výrobku se často využívá prodej ve velkých obchodních sítích", "C": "Ve fázi poklesu se využívá často prodeje ve specializovaných obchodech"}, "correct": ["B"], "explanation": ""}, {"id": 107, "source": "Marketing 162", "text": "Distribuční funkce", "options": {"A": "K distribučním funkcím patří poprodejní služby", "B": "K distribučním funkcím patří promo aktivity", "C": "Hodnocení efektivity prodeje"}, "correct": ["A"], "explanation": ""}, {"id": 108, "source": "Marketing 162", "text": "Elasticita ceny", "options": {"A": "Cenová elasticita je vztah mezi požadovaným množstvím produktu a jeho cenou vyjádřený určitým číslem", "B": "U elastické poptávky nárůst či pokles ceny vede k menšímu nárůstu či poklesu poptávky", "C": "Při záporné příjmové elasticitě výdaje za určité zboží klesají i když příjmy rostou – jde o luxusní zboží"}, "correct": ["B"], "explanation": ""}, {"id": 109, "source": "Marketing 162", "text": "Rovnováha trhu", "options": {"A": "Nastává, když poptávka se přesně rovná množství námi vyrobeného zboží", "B": "Při nižší ceně než je rovnovážná cena výrobci nabízejí více produktů než kolik by koupili zákazníci", "C": "Při rovnovážné ceně jsou zákazníci ochotni koupit přesně tolik, kolik výrobci nabízejí"}, "correct": ["C"], "explanation": ""}, {"id": 110, "source": "Marketing 162", "text": "Proces stanovení ceny", "options": {"A": "Ztrátový favorit – jeho cena se určuje na základě nejlepší ceny konkurence", "B": "Metoda cenové diskriminace je založena na rozlišování cen pro různé typy zákazníků", "C": "Jednotná dodací cena – cena dopravy je určena dle vzdálenosti v zónách"}, "correct": ["B"], "explanation": ""}, {"id": 111, "source": "Marketing 162", "text": "Cenové strategie", "options": {"A": "Strategie vysoce výnosné koupě – znamená stanovení vysoké ceny pro superprodukt", "B": "Prémiová cenová strategie znamená stanovení nízké ceny za kvalitní produkt", "C": "Strategie průměrné kvality – znamená stanovení střední ceny pro velkou skupinu středně kvalitních výrobků"}, "correct": ["C"], "explanation": ""}, {"id": 112, "source": "Marketing 162", "text": "Pro maloobchod je PRAVDA:", "options": {"A": "Specializovaný obchod má úzký a hluboký sortiment", "B": "Obchodní řetězce jsou nezávislé obchody sdružené za účelem společné reklamy", "C": "Přímý marketing se využívá například při prodeji v prodejních automatech (jsou na stejné úrovni)"}, "correct": ["A"], "explanation": ""}, {"id": 113, "source": "Marketing 162", "text": "Efektivita prodejních sil", "options": {"A": "Sellogram je matice kupních motivů a výrobních řad produktů", "B": "Hodnocení obchodních zástupců se provádí dle obchodního plánu pro každého prodejce", "C": "Obchodní zástupce nikdy nezajišťuje provozní přípravky"}, "correct": ["B"], "explanation": ""}, {"id": 114, "source": "Marketing 162", "text": "Strategie dle životních cyklů výrobku", "options": {"A": "V období otazníků je třeba volit strategii omezené propagace, ale zvyšování podpory prodeje", "B": "V období hvězd je třeba volit strategii pro rychlý růst podílu na trhu", "C": "V období krav je třeba volit strategii selektivní podpory jen pro nejperspektivnější produkty"}, "correct": ["B"], "explanation": ""}, {"id": 115, "source": "Marketing 162", "text": "Strategie dle kooperace na trhu", "options": {"A": "Konfrontační strategie umožňuje firmám spolupracovat i když si konkurují", "B": "Kooperační strategie znamená, že firmy, které si konkurují, míří záměrně každý na jiné místo na trhu", "C": "Úhybná strategie znamená, že firmy, které si konkurují, míří záměrně každý na jiné místo na trhu"}, "correct": ["C"], "explanation": ""}, {"id": 116, "source": "Marketing 162", "text": "Strategie dle ekonomické situace", "options": {"A": "V období inflace je vhodná strategie rozšíření sortimentu a snížení cen", "B": "V období inflace je vhodná strategie zúžení sortimentu a snížení cen, zavedení ekonomické varianty produktu", "C": "V období recese je vhodná strategie zúžení sortimentu a zvýšení cen, zavedení luxusní varianty produktu"}, "correct": ["B"], "explanation": ""}, {"id": 117, "source": "Marketing 162", "text": "Typy značek", "options": {"A": "Souhrnná značka je značka společnosti, která slouží pro řady podobných výrobků s vlastními obchodními značkami", "B": "Značka výrobce se jinak nazývá firemní značka", "C": "Licenční značka je soukromá značka prodejce"}, "correct": ["A"], "explanation": ""}, {"id": 118, "source": "Marketing 162", "text": "Pro řízení značky NENÍ pravdivé:", "options": {"A": "obchodní jméno se nedá kombinovat s individuálním jménem", "B": "značku je vhodné zřizovat také když spotřebitel nemůže posoudit kvalitu výrobku", "C": "značka je vhodná i pro komoditní zboží"}, "correct": ["A"], "explanation": ""}, {"id": 119, "source": "Marketing 162", "text": "Poptávka", "options": {"A": "je závislost množství poptávaného zboží na síle reklamní kampaně", "B": "je závislost množství zboží které se kupuje v určitém období a jeho ceny.", "C": "je závislost množství zboží na počtu prodejců v daném regionu."}, "correct": ["B"], "explanation": ""}, {"id": 120, "source": "Marketing 162", "text": "Klasifikace nákladů", "options": {"A": "Náklady dělíme na přímé a nepřímé", "B": "Prvotní a druhotné", "C": "Integrální a diferenciální"}, "correct": ["A"], "explanation": ""}, {"id": 121, "source": "Marketing 162", "text": "Výsledovka", "options": {"A": "Vyčísluje čistý zisk", "B": "Popisuje stav majetku na konci minulého a předminulého roku", "C": "Součástí výsledovky je výroční zpráva"}, "correct": ["A"], "explanation": ""}, {"id": 122, "source": "Marketing 162", "text": "Měření návštěvnosti", "options": {"A": "Výhodou elektronické reklamy je poměrně přesný odhad sociogeografických", "B": "Surfer je návštěvník, který vyhledává informace o daném tématu na internetu", "C": "Click through rate je průměr počtu zobrazených bannerů ku počtu kliků na banner"}, "correct": ["B"], "explanation": ""}, {"id": 123, "source": "Marketing 162", "text": "Zpracování výsledků výzkumu", "options": {"A": "Medián je nejčastější hodnota, kterou získáme po třídění", "B": "K neparametrickým testům patří také testování vyslovených hypotéz", "C": "V první fázi zpracování určujeme znaky skupiny"}, "correct": ["B"], "explanation": ""}, {"id": 124, "source": "Marketing 162", "text": "Variabilní náklady", "options": {"A": "Jednotkové variabilní náklady rostou přímo úměrně s růstem objemu produkce", "B": "Jednotkové variabilní náklady jsou v zásadě fixní", "C": "Celkové variabilní náklady zůstávají v zásadě konstantní po celou dobu produkce"}, "correct": ["B"], "explanation": ""}, {"id": 125, "source": "Marketing 162", "text": "Hodnocení mkt oddělení", "options": {"A": "K základním kritériím hodnocení mkt oddělení patří hodnocení plnění business plánu", "B": "K základním kritériím hodnocení mkt oddělení nepatří podíl na trhu jednotlivých výrobků", "C": "K základním kritériím hodnocení mkt oddělení patří rostoucí počet obchodních partnerů"}, "correct": ["A"], "explanation": ""}, {"id": 126, "source": "Marketing 162", "text": "Správce distribučních kanál", "options": {"A": "K nejdůležitějším funkcím správce distr. Kanálů patří řízení koncepce webových stránek", "B": "K nejdůležitějším funkcím správce dist. kanálů patří analýza účinnosti reklamních", "C": "K nejdůležitějším funkcím správce distr. Kanálů patří organizace mkt"}, "correct": ["B"], "explanation": ""}, {"id": 127, "source": "Marketing 162", "text": "Mkt analytik", "options": {"A": "K nejdůležitějším funkcím mkr analytika patří řízení rozpočtu marketingu", "B": "K nejdůležitějším funkcím mkr analytika patří činnost tiskového mluvčího", "C": "K nejdůležitějším funkcím mkr analytika patří organizace mkt výzkumů"}, "correct": ["C"], "explanation": ""}, {"id": 128, "source": "Marketing 162", "text": "Event marketing", "options": {"A": "Má určité konkrétní prodejní cíle", "B": "Je prezentace reklamní kampaně formy orientovaná na zážitek cílových skupin", "C": "Interní event marketing může být setkání pracovníků k jubileu firmy"}, "correct": ["C"], "explanation": ""}, {"id": 129, "source": "Marketing 162", "text": "Dotazník", "options": {"A": "Nepřímé otázky jsou založeny na projektivní technice", "B": "Demografické údaje ujišťujeme nejvhodněji na začátku dotazníku", "C": "Na dichotomické otázky vybíráme odpověď nejčastěji z 5 – 6 variant"}, "correct": ["A"], "explanation": ""}, {"id": 130, "source": "Marketing 162", "text": "Kontaktní metody", "options": {"A": "Osobní interwiev je nejnákladnější kontaktní metodou ..", "B": "CATI výzkumu je založen na písemném oslovení", "C": "Omnibus je síť stálých tazatelů"}, "correct": ["A"], "explanation": ""}, {"id": 131, "source": "Marketing 162", "text": "Strategie dle životních cyklů výrobku", "options": {"A": "V období otazníků je třeba volit strategii omezené propagace, ale zvyšování podpory prodeje", "B": "V období hvězd je třeba volit strategii pro rychlý růst podniku na trhu", "C": "V období krav je třeba volit strategii selektivní podpory jen pro nejperspektivnější produkty"}, "correct": ["B"], "explanation": ""}, {"id": 132, "source": "Marketing 162", "text": "Strategie dle kooperace na trhu", "options": {"A": "Konfrontační strategie umožňuje firmám spolupracovat s i když si konkurují", "B": "Kooperační strategie znamená, že firmy, které se konkurují míří záměrně každý na jiné místo na trhu", "C": "Úhybná strategie znamená, že firmy, které si konkurují, míří záměrně každý na jiné místo na trhu"}, "correct": ["C"], "explanation": ""}, {"id": 133, "source": "Marketing 162", "text": "Strategie dle ekonomické situace", "options": {"A": "V období inflace je vhodná strategie rozšíření sortimentu a snížení ceny", "B": "V období inflace je vhodná strategie zúžení sortimentu a snížení ceny, zavedení ekonomické varianty produktu", "C": "Období recese je vhodná strategie zúžení sortimentu a zvýšení cen, zavedení luxusní varianty produktu"}, "correct": ["B"], "explanation": ""}, {"id": 134, "source": "Marketing 162", "text": "Jaká je vhodná politika produktu v různých fázích životního cyklu produktu?", "options": {"A": "V etapě zavádění výrobku na trh bývá kvalita výrobku průměrná", "B": "V období zralosti není vhodné rozšiřování sortimentu", "C": "V období útlumu jsou vhodné inovace produktu"}, "correct": ["A"], "explanation": ""}, {"id": 135, "source": "Marketing 162", "text": "Typy značek", "options": {"A": "Souhrnná značka je značka společnosti, která slouží pro řady podobných výrobků s vlastními obchodními značkami", "B": "Značka výrobce se jinak nazývá firemní značka", "C": "Licenční značka je soukromá značka prodejce"}, "correct": ["A"], "explanation": ""}, {"id": 136, "source": "Marketing 162", "text": "Image značky", "options": {"A": "Klíčové slovo naší značky musí být výlučně naše", "B": "Vybudování silné značky je podmínkou vyšších prodejů", "C": "Vybudování silné značky je podmínkou získání vyššího podlu na trhu"}, "correct": ["A"], "explanation": ""}, {"id": 137, "source": "Marketing 162", "text": "Jaké NEJSOU vhodné praktiky pro řízení značky, s ohledem na následující tvrzení?", "options": {"A": "Obchodní jméno se nedá kombinovat s individuálním jménem", "B": "Značku je vhodné zřizovat také když spotřebitel nemůže posoudit kvalitu výrobku", "C": "Značka je vhodná i pro komoditní zboží"}, "correct": ["A"], "explanation": ""}, {"id": 138, "source": "Marketing 162", "text": "Definice marketingu", "options": {"A": "Marketing je reklama zaměřená vždy na ekonomický zisk", "B": "Marketing je aktivita, která se snaží tvořit zisk prostřednictvím spokojenosti zákazníka", "C": "Základem marketingu je snaha kupní chování zákazníka"}, "correct": ["B"], "explanation": ""}, {"id": 139, "source": "Marketing 162", "text": "Typy plánu", "options": {"A": "Strategie plánování je založeno na výběru z možných variant řešení a určení nejvhodnější činnosti", "B": "Operativní plánování dělíme na krátkodobé, střednědlouhé a dlouhodobé", "C": "Optimální je plánovat činnost shora dolů a cíle zdola nahoru"}, "correct": ["A"], "explanation": ""}, {"id": 140, "source": "Marketing 162", "text": "Komponenty plánu", "options": {"A": "Výběr konkrétního marketingového mixu není součástí marketingového plánu", "B": "Výběr poslání firmy je součásti mkt plánu", "C": "Určení způsobu kontroly plnění plánu je součástí mkt plánu"}, "correct": ["C"], "explanation": ""}, {"id": 141, "source": "Marketing 162", "text": "Interní analýza", "options": {"A": "Interní analýza je vždy prováděna z interních zdrojů informací", "B": "Součástí interní analýzy je analýza dosavadní strategie", "C": "Součástí interní analýzy není analýza tržní pozice"}, "correct": ["B"], "explanation": ""}, {"id": 142, "source": "Marketing 162", "text": "SWOT analýza", "options": {"A": "Příležitosti firmy se nachází vně podniku", "B": "Úkolem swot analýzy je eliminovat ohrožení příležitostmi podniku", "C": "Slabé stránky podniku je třeba spojit se silnými stránkami podniku"}, "correct": ["A"], "explanation": ""}, {"id": 143, "source": "Marketing 162", "text": "Prostředí firmy", "options": {"A": "Součástí mezoprostředí jsou dodavatelé firmy", "B": "Součástí makroprostředí jsou konkurenti firmy", "C": "Součástí mezoprostředí je technologie firmy"}, "correct": ["A"], "explanation": ""}, {"id": 144, "source": "Marketing 162", "text": "Analýza trhu", "options": {"A": "Výsledkem rozdílné poptávky bývá rozdílné kupní chování spotřebitelů", "B": "Dodatečná poptávka vzniká, když vyměňují starý výrobek za druhy", "C": "Průmysloví zákazníci kupují vždy průmyslové zboží či služby"}, "correct": ["A"], "explanation": ""}, {"id": 145, "source": "Marketing 162", "text": "Určování podílu na trhu", "options": {"A": "Tržní podíl = kumulativní proniknutí \\* podíl opakovaného nákupu \\* index míry spotřeby", "B": "Tržní podíl = kumulativní proniknutí \\* podíl zkušebního nákupu \\* index míry proniknutí", "C": "Tržní podíl = kumulativní spotřeba \\* podíl opakovaného nákupu \\* index míry proniknutí"}, "correct": ["A"], "explanation": ""}, {"id": 146, "source": "Marketing 162", "text": "Specifika průmyslového trh", "options": {"A": "Průmyslový trh je definován jako souhrn poptávek po průmyslových výrobcích", "B": "Průmyslový trh je místo transformace základních surovin, polotovarů a komponentů a finální výrobek", "C": "Průmyslový trh je součástí trhu celého trhu spotřebitelského"}, "correct": ["B"], "explanation": ""}, {"id": 147, "source": "Marketing 162", "text": "Teorie průmyslového řetězce", "options": {"A": "Integrace znamená přibrání funkce následujícího či předchozího článku průmyslového řetězce", "B": "Specializace znamená, že se firma zbavuje částí řetězce, kterou nahradí externím dodavatelem", "C": "Zpětná integrace znamená přibrání funkce následujícího článku průmyslového řetězce"}, "correct": ["A"], "explanation": ""}, {"id": 148, "source": "Marketing 162", "text": "Porterova teorie konkurenčních sil", "options": {"A": "Výnosnost průmyslového sektoru závisí na síle přímé konkurence v sektoru, na síle konkurence nově přicházející...působení substitutů a na vyjednávající síle kupujících a dodavatelů", "B": "Výnosnost průmyslového sektoru závisí na výši cen v průmyslovém sektoru, síle konkurence v sektoru", "C": "Výnosnost průmyslového sektoru, závisí na velikosti trhu, na síle konkurence nově přicházející"}, "correct": ["A"], "explanation": ""}, {"id": 149, "source": "Marketing 162", "text": "Distribuční politika", "options": {"A": "Distribuční politika neřeší služby zákazníkům", "B": "Distribuční politika neřeší velikost prodejních míst", "C": "Distribuční politika neřeší inovace produktu"}, "correct": ["C"], "explanation": ""}, {"id": 150, "source": "Marketing 162", "text": "Pro úrovně distribučních kanálů NENÍ SPRÁVNĚ:", "options": {"A": "Ve fázi zavádění výrobku na trh se často využívá prodej bez zprostředkovatelů", "B": "Ve fázi zralosti výrobku se často využívá prodej ve velkých obchodních sítích", "C": "Ve fázi poklesu se využívá často prodej ve specializovaných obchodech"}, "correct": ["C"], "explanation": ""}, {"id": 151, "source": "Marketing 162", "text": "Distribuční funkce", "options": {"A": "K distribučním funkcím patří prodejní služby", "B": "K distribučním funkcím patří promoaktivity", "C": "K distribučním funkcím patří hodnocení efektivity prodeje"}, "correct": ["A"], "explanation": ""}, {"id": 152, "source": "Marketing 162", "text": "Typy nákladů", "options": {"A": "Přímé a nepřímé", "B": "Primární a sekundární", "C": "Fixní a produktové"}, "correct": ["A"], "explanation": ""}, {"id": 153, "source": "Marketing 162", "text": "Strategie dle životních cyklů výrobku:", "options": {"A": "V období otazníku je třeba volit strategii omezené propagace, ale zvyšování podpory prodeje", "B": "V období hvězd je třeba volit strategii pro rychlý růst podílu na trhu", "C": "V období krav je třeba volit strategii selektivní podpory jen pro nejperspektivnější produkty"}, "correct": ["B"], "explanation": ""}, {"id": 154, "source": "Marketing 162", "text": "Strategie dle kooperace na trhu", "options": {"A": "Konfrontační strategie umožňuje firmám spolupracovat i když si konkurují", "B": "Kooperační strategie znamená, že firmy které si konkurují, míří záměrně každý na jiné místo na trhu", "C": "Úhybná strategie znamená, že firmy, které si konkurují, míří záměrně na jiné místo na trhu"}, "correct": ["C"], "explanation": ""}, {"id": 155, "source": "Marketing 162", "text": "Strategie dle času:", "options": {"A": "Při strategii sbírání smetany výrobce, rychle sbírá zisky z vysokých cen", "B": "Při strategii sbírání smetany výrobce pomalu sbírá zisky z vysokých cen", "C": "Při strategii průniku výrobce snižuje ceny a zaměřuje se na výklenek trhu"}, "correct": ["A"], "explanation": ""}, {"id": 156, "source": "Marketing 162", "text": "Strategie dle ekonomické situace", "options": {"A": "V období inflace je vhodná strategie rozšíření sortimentu a snížení cen", "B": "V období recese je vhodná strategie zúžení sortimentu a snížení cen, zavedení ekonomické varianty", "C": "V období recese je vhodná strategie zúžení sortimentu zvýšení cen, zavedeni luxusní varianty"}, "correct": ["B"], "explanation": ""}, {"id": 157, "source": "Marketing 162", "text": "Typy značek", "options": {"A": "Souhrnná značka je značka společnosti, která slouží pro řady podobných výrobku a služeb", "B": "Značka výrobce se jinak nazývá firemní značka", "C": "Značka je soukromá značka prodejce"}, "correct": ["A"], "explanation": ""}, {"id": 158, "source": "Marketing 162", "text": "Rovnováha na trhu", "options": {"A": "Nastává vždy, když poptávka se přesně rovná množství námi vyrobeného zboží", "B": "Při nižší ceně než je rovnovážná cena výrobci nabízejí více produktů než kolik by koupili zákazníci", "C": "Při rovnovážné ceně jsou zákazníci ochotni koupit přesně tolik, kolik výrobci nabízejí"}, "correct": ["C"], "explanation": ""}, {"id": 159, "source": "Marketing 162", "text": "Proces stanovení ceny", "options": {"A": "Ztrátový favorit- jeho cena se určuje na základě nejlepší ceny konkurence", "B": "Metoda cenové diskriminace je založena na rozlišování cen pro různé typy zákazníků", "C": "Jednotná dodací cena- cena dopravy je určena dle vzdálenosti v zónách"}, "correct": ["B"], "explanation": ""}, {"id": 160, "source": "Marketing 162", "text": "Cenové strategie", "options": {"A": "Strategie vysoce výhodné koupě – znamená stanovení vysoké ceny pro superprodukt", "B": "Prémiová cenová strategie znamená stanovení nízké ceny za kvalitní produkt", "C": "Strategie průměrné kvality – znamená stanovení střední ceny pro velkou skupinu středně kvalitní"}, "correct": ["C"], "explanation": ""}, {"id": 161, "source": "Marketing 162", "text": "Maloobchod typy", "options": {"A": "Specializovaný obchod má úzký a hluboký sortiment", "B": "Obchodní řetězce jsou nezávislé obchody sdružené za účelem společné reklamy", "C": "Přímý marketing se využívá např. při prodeji v prodejních automatech"}, "correct": ["A"], "explanation": ""}, {"id": 162, "source": "Marketing 162", "text": "Jak se jmenuje admin (Bc. Snow) Discord serveru FEK ZČU ?", "options": {"A": "Miroslav Plevný", "B": "Mikuláš (Míťa) Gangur", "C": "Pepa Arenšteijn"}, "correct": ["C"], "explanation": ""}, {"id": 163, "source": "Primát 111", "text": "Mezi současné marketingové trendy nepatři", "options": {"A": "společenská zodpovědnost", "B": "virální kampaně", "C": "výrobní podnikatelská koncepce", "D": "sociální marketing"}, "correct": ["C"], "explanation": ""}, {"id": 164, "source": "Primát 111", "text": "Do podpory prodeje jakožto nástroje marketingové komunikace nelze zahrnout", "options": {"A": "loterie", "B": "ochutnávky", "C": "věrnostní programy", "D": "PR"}, "correct": ["D"], "explanation": ""}, {"id": 165, "source": "Primát 111", "text": "Cause related (sdílený) marketing Ize charakterizovat jako:", "options": {"A": "společné distribuční cesty pro vice firem", "B": "marketingové strategie sdílené dvěma konkurenty", "C": "koncept charity, v němž jsou výrazně zapojení i zákaznici", "D": "marketing orientovaný na okamžitý efekt"}, "correct": ["C"], "explanation": ""}, {"id": 166, "source": "Primát 111", "text": "Pro chování kupujících na B2B trzích je typické", "options": {"A": "malý počet účastníků rozhodovacího procesu", "B": "převaha emocionálních aspektů", "C": "poptávka subjektů je cenově velmi pružná", "D": "větší délka rozhodování"}, "correct": ["D"], "explanation": ""}, {"id": 167, "source": "Primát 111", "text": "Posledním krokem marketingového výzkumu z níže uvedených je", "options": {"A": "interpretace dat", "B": "sběr dat", "C": "stanovení hypotéz výzkumu", "D": "výběr metod výzkumu"}, "correct": ["A"], "explanation": ""}, {"id": 168, "source": "Primát 111", "text": "Věrnostní programy řadíme v rámci marketingového mixu do:", "options": {"A": "produktu", "B": "ceny", "C": "komunikace", "D": "distribuce"}, "correct": ["C"], "explanation": ""}, {"id": 169, "source": "Primát 111", "text": "Matice GE pracuje s proměnnými", "options": {"A": "relativní tržní podíl a velikost trhu", "B": "atraktivita trhu a tržby z prodejů", "C": "zisk a časový interval", "D": "atraktivita trhu a konkurenční postaveni"}, "correct": ["D"], "explanation": ""}, {"id": 170, "source": "Primát 111", "text": "Porteruv model pěti sil patři do", "options": {"A": "analýz mezoprostředí", "B": "portfolio analýz", "C": "obdoba BCG matice", "D": "analýz makroprostředí"}, "correct": ["A"], "explanation": ""}, {"id": 171, "source": "Primát 111", "text": "Teleshopping řadíme mezi nástroje", "options": {"A": "reklamy", "B": "přímého marketingu", "C": "podpory prodeje", "D": "sponzoringu"}, "correct": ["B"], "explanation": ""}, {"id": 172, "source": "Primát 111", "text": "Délka výrobního sortimentu je daná:", "options": {"A": "celkovým počtem výrobků", "B": "počtem typů výrobků", "C": "rozměry daného produktu", "D": "počtem výrobních (výrobkových, produktových) řad"}, "correct": ["A"], "explanation": ""}, {"id": 173, "source": "Primát 111", "text": "Mezi základní metody stanovení ceny v rámci cenotvorby neřadíme", "options": {"A": "dle kvality", "B": "dle konkurence", "C": "dle nákladu", "D": "dle cenové elasticity poptávky"}, "correct": ["A"], "explanation": ""}, {"id": 174, "source": "Primát 111", "text": "Typickým příkladem extenzivního nákupního chování na B2C trhu je:", "options": {"A": "nákup nového trička", "B": "koupě knížky", "C": "nákup mléka pro výrobu sýrů", "D": "nákup nového počítače"}, "correct": ["D"], "explanation": ""}, {"id": 175, "source": "Primát 111", "text": "Účetní závěrka vybrané firmy patři pro vybranou firmu mezi", "options": {"A": "primární interní zdroj informaci", "B": "sekundární interní zdroj informaci", "C": "primární externí zdroj informaci", "D": "sekundární externí zdroj informaci"}, "correct": ["B"], "explanation": ""}, {"id": 176, "source": "Primát 111", "text": "Součástí analýzy mezoprostředí není", "options": {"A": "analýza mínění veřejnosti", "B": "analýza konkurenčních aktivit", "C": "analýza demografie", "D": "analýza potenciálních dodavatelů"}, "correct": ["C"], "explanation": ""}, {"id": 177, "source": "Primát 111", "text": "Při strategii penetrace trhu se s ohledem na konkurenci běžné stanovuji ceny:", "options": {"A": "co nejvyšší", "B": "v rámci produktového portfolia s maximální ziskovou marži", "C": "co nejnižší doplněné často o intenzivní marketingovou komunikací", "D": "ve strategii penetrace jde o něco zcela jiného"}, "correct": ["C"], "explanation": ""}, {"id": 178, "source": "Primát 111", "text": "V rámci nepřímé distribuce se využívá", "options": {"A": "vždy přesně jeden mezičlánek", "B": "vždy služeb velkoobchodu", "C": "jakýkoliv počet mezičlánků", "D": "nevyužívá se žádný mezičlánek"}, "correct": ["C"], "explanation": ""}, {"id": 179, "source": "Primát 111", "text": "Fázi cíleného marketingu není", "options": {"A": "positioning", "B": "benchmarking", "C": "targeting", "D": "segmentace trhu"}, "correct": ["B"], "explanation": ""}, {"id": 180, "source": "Primát 111", "text": "Životni cyklus produktu má podobnost s", "options": {"A": "benchmarkingern", "B": "mystery shoppingem", "C": "s BCG matici", "D": "undercover marketingem"}, "correct": ["C"], "explanation": ""}, {"id": 181, "source": "Primát 111", "text": "Holistická koncepce marketingu nezahrnuje", "options": {"A": "vztahový marketing", "B": "interní", "C": "výrobní marketing", "D": "společensky odpovědný marketing"}, "correct": ["C"], "explanation": ""}, {"id": 182, "source": "Primát 111", "text": "Tzv. cílový trh tvoři", "options": {"A": "zákaznici, kteří jsou osloveni marketingovým mixem a uvažuji o koupi", "B": "zákaznici, kteří mají potřebu daný produkt vlastnit", "C": "zákazníci, kteří již daný produkt vlastni", "D": "potenciální trh, který není saturován"}, "correct": ["A"], "explanation": ""}, {"id": 183, "source": "Primát 111", "text": "Pro speciální lékařské vybavení (gama nůž atd.) se využívá", "options": {"A": "tržně nediferencovaný marketing", "B": "hromadný marketing", "C": "masové nediferencovaný marketing", "D": "cíleny koncentrovaný marketing"}, "correct": ["D"], "explanation": ""}, {"id": 184, "source": "Primát 111", "text": "Způsob vnímání produktu zákazníky v mysli označujeme jako", "options": {"A": "tržní zacílení", "B": "psychografickou segmentaci", "C": "brainstorming", "D": "tržní umístěni"}, "correct": ["D"], "explanation": ""}, {"id": 185, "source": "Primát 111", "text": "Primární informace pro marketingový výzkum získáme", "options": {"A": "ze statistických výkazů, odborné literatury, z internetových rešerší apod.", "B": "pouze vlastním výzkumem", "C": "z podnikového účetnictví", "D": "z předcházejícího šetření"}, "correct": ["B"], "explanation": ""}, {"id": 186, "source": "Primát 111", "text": "Situaci, kdy firma vyrábí dva či více výrobků, které se mohou lišit např. kvalitou, velikostí či jinými rysy, ale jsou nabízeny jedním propagačním mixem, označujeme jako", "options": {"A": "hromadný marketing", "B": "koncentrovaný marketing", "C": "výrobkově diferencovaný marketing", "D": "tržně diferencovaný marketing"}, "correct": ["C"], "explanation": ""}, {"id": 187, "source": "Primát 111", "text": "Motiv je", "options": {"A": "vnější podnět", "B": "vnitřní podnět", "C": "jiné označeni motivu", "D": "ekvivalent motivu"}, "correct": ["B"], "explanation": ""}, {"id": 188, "source": "Primát 111", "text": "Tzv. tradiční marketing se opírá o", "options": {"A": "individualizaci zákazníka", "B": "standardizaci produktů", "C": "dialog a zpětnou vazbu", "D": "loajalitu zákazníka"}, "correct": ["B"], "explanation": ""}, {"id": 189, "source": "Primát 111", "text": "Mezi etapy cíleného marketingu nepatří", "options": {"A": "tržní umístění", "B": "segmentace trhu", "C": "reengineering", "D": "tržní zacílení"}, "correct": ["C"], "explanation": ""}, {"id": 190, "source": "Primát 111", "text": "Do psychografických kritérii segmentace nezařezujeme:", "options": {"A": "příslušnost k určité sociální skupině", "B": "příjem", "C": "životní styl", "D": "vzdělání"}, "correct": ["B", "D"], "explanation": ""}, {"id": 191, "source": "Primát 111", "text": "Frančíza patří mezi:", "options": {"A": "horizontální marketingové systémy", "B": "diagonální marketingové systém", "C": "konvenční marketingové systémy", "D": "vertikální marketingové systémy"}, "correct": ["D"], "explanation": ""}, {"id": 192, "source": "Primát 111", "text": "Komunikační strategie založená na podpoře výrobku na jeho cestě ke spotřebiteli se nazývá", "options": {"A": "strategie tahu (poll)", "B": "strategie penetrace", "C": "strategie sbírání smetany", "D": "strategie tlaku (push)"}, "correct": ["D"], "explanation": ""}, {"id": 193, "source": "Primát 111", "text": "Termín marketingové plánování se využívá", "options": {"A": "pro využiti statistických analýz pro sestavení plánu podniku", "B": "seznam aktivit podniku na dalších 5 let", "C": "metody objasňující, jak použit marketingových zdrojů k dosažení marketingových cílů", "D": "vytvoření podnikových plánů"}, "correct": ["C"], "explanation": ""}, {"id": 194, "source": "Primát 111", "text": "Do direkt marketingu nepatří", "options": {"A": "zásilkový prodej", "B": "teleshopping", "C": "katalogový prodej", "D": "žádná odpověď není správná"}, "correct": ["D"], "explanation": ""}, {"id": 195, "source": "Primát 111", "text": "PEST analýza patří mezi", "options": {"A": "analýzy portfolia", "B": "situační analýzy", "C": "analýzy konkurence", "D": "analýzy konkurence"}, "correct": ["B"], "explanation": ""}, {"id": 196, "source": "Primát 111", "text": "Pro matici Bostonského modelu BCG platí, že", "options": {"A": "je součástí výzkumu trhu", "B": "obsahuje tzv. \"otazníky\", \"kočky\", \"krávy\" a \"hvězdy\"", "C": "pracuje s pojmy strategická podnikatelská jednotka", "D": "má na osách atraktivitu trhu a tempo růstu trhu"}, "correct": ["C"], "explanation": ""}, {"id": 197, "source": "Primát 111", "text": "Model AIDA řeší", "options": {"A": "metody cenové tvorby", "B": "cíle marketingové komunikace", "C": "úroveň prodejních cest", "D": "patří mezi situační analýzy"}, "correct": ["B"], "explanation": ""}, {"id": 198, "source": "Primát 111", "text": "Výstupem SWOT analýzy je", "options": {"A": "porovnání s konkurencí a řešení příčin tohoto stavu", "B": "stanovení dalších marketingových strategických kroků podniku", "C": "přehled o příležitostech pro podnik", "D": "analýza prodejů a tržního podílu"}, "correct": ["B"], "explanation": ""}, {"id": 199, "source": "Primát 111", "text": "Typickým příkladem extenzivního nákupního chování na B2C trhu je:", "options": {"A": "nákup nového rodinného domu", "B": "nákup nového trička", "C": "koupě svačiny", "D": "nákup mléka pro výrobu sýrů"}, "correct": ["A"], "explanation": ""}, {"id": 200, "source": "Primát 111", "text": "Přehled skladových zásob vybrané firmy patří pro vybranou firmu mezi", "options": {"A": "primární interní zdroj informaci", "B": "primární interní zdroj informaci", "C": "sekundární interní zdroj informací", "D": "sekundární externí zdroj informací"}, "correct": ["C"], "explanation": ""}, {"id": 201, "source": "Primát 111", "text": "Součástí analýzy mezoprostředí není:", "options": {"A": "analýza mínění veřejnosti", "B": "analýza konkurenčních aktivit", "C": "analýza parity kupní síly", "D": "analýza potenciálních dodavatelů"}, "correct": ["C"], "explanation": ""}, {"id": 202, "source": "Primát 111", "text": "Fází cíleného marketingu není", "options": {"A": "tržní umístění", "B": "reengineering", "C": "tržní zacílení", "D": "segmentace trhu"}, "correct": ["B"], "explanation": ""}, {"id": 203, "source": "Primát 111", "text": "Životní cyklus produktu má přímou souvislost s:", "options": {"A": "benchmarkingem", "B": "mystery shoppingem", "C": "portfolio maticí Boston Consulting Group", "D": "product placementem"}, "correct": ["C"], "explanation": ""}, {"id": 204, "source": "Primát 111", "text": "Holistická koncepce marketingu nezahrnuje", "options": {"A": "vztahový marketing", "B": "integrovaný marketing", "C": "prodejní marketing", "D": "společensky odpovědný marketing"}, "correct": ["C"], "explanation": ""}, {"id": 205, "source": "Primát 111", "text": "Tzv. podchycený trh tvoří", "options": {"A": "zákazníci, kteří již daný produkt vlastní", "B": "zákazníci, kteří jsou osloveni propagací a uvažují o koupi", "C": "zákazníci, kteří mají potřebu daný produkt vlastnit", "D": "potenciální trh, který není saturován"}, "correct": ["A"], "explanation": ""}, {"id": 206, "source": "Primát 111", "text": "Porterův model pěti sil patří do:", "options": {"A": "portfolio analýz", "B": "obdoba SWOT analýzy", "C": "analýz mezoprostředí", "D": "analýz zákazníka"}, "correct": ["C"], "explanation": ""}, {"id": 207, "source": "Primát 111", "text": "Zásilkový prodej řadíme mezi nástroje", "options": {"A": "přímého marketingu", "B": "reklamy", "C": "podpory prodeje", "D": "sponzoringu"}, "correct": ["A"], "explanation": ""}, {"id": 208, "source": "Primát 111", "text": "Mezi současné marketingové trendy nepatří", "options": {"A": "společenská zodpovědnost", "B": "virální kampaně", "C": "prodejní podnikatelská koncepce", "D": "sociální marketing"}, "correct": ["C"], "explanation": ""}, {"id": 209, "source": "Primát 111", "text": "Matice GE je založena na proměnných", "options": {"A": "relativní tržní podíl a velikost trhu", "B": "konkurenční postavení a atraktivita trhu", "C": "atraktivita trhu a tržby z prodejů", "D": "zisk a časový interval"}, "correct": ["B"], "explanation": ""}, {"id": 210, "source": "Primát 111", "text": "Šíře výrobního sortimentu je dána:", "options": {"A": "počtem výrobních (výrobkových, produktových) řad", "B": "celkovým počtem výrobků", "C": "počtem typů výrobků", "D": "rozměry daného produktu"}, "correct": ["A"], "explanation": ""}, {"id": 211, "source": "Primát 111", "text": "Mezi základní metody stanovení ceny řadíme", "options": {"A": "dle cenové elasticity poptávky", "B": "prémiové ceny", "C": "odhadem", "D": "skontem"}, "correct": ["A"], "explanation": ""}, {"id": 212, "source": "Primát 111", "text": "Do podpory prodeje nelze zahrnout", "options": {"A": "loterie", "B": "ochutnávky", "C": "věrnostní programy", "D": "reklamu na billboardech"}, "correct": ["D"], "explanation": ""}, {"id": 213, "source": "Primát 111", "text": "Sdílený marketing (cause related) Ize charakterizovat jako", "options": {"A": "společné distribuční cesty pro více firem", "B": "marketingové strategie sdílené dvěma konkurenty", "C": "koncept charity, v němž jsou výrazně zapojeni i zákazníci", "D": "marketing orientovaný na okamžitý efekt"}, "correct": ["C"], "explanation": ""}, {"id": 214, "source": "Primát 111", "text": "Pro chování kupujících na trzích B2B je typické", "options": {"A": "malý počet účastníků rozhodovacího procesu", "B": "odvozená poptávka", "C": "převaha emocionálních aspektů", "D": "poptávka subjektů je cenově velmi pružná"}, "correct": ["B"], "explanation": ""}, {"id": 215, "source": "Primát 111", "text": "Prvním krokem při přípravě marketingového výzkumu je:", "options": {"A": "statistické zpracování", "B": "sběr dat", "C": "stanovení cíle výzkumu", "D": "výběr metod výzkumu"}, "correct": ["C"], "explanation": ""}, {"id": 216, "source": "Primát 111", "text": "Zákaznické soutěže (např. „Vyfoť se a vyhraj apod.) řadíme v rámci marketingového mixu do", "options": {"A": "produktu", "B": "ceny", "C": "komunikace", "D": "distribuce"}, "correct": ["C"], "explanation": ""}, {"id": 217, "source": "Primát 111", "text": "Při strategii pronikání trhu se s ohledem na konkurenci běžně stanovují ceny", "options": {"A": "co nejvyšší", "B": "v rámci produktového portfolia s maximální ziskovou marží", "C": "co nejnižší", "D": "ve strategii penetrace jde o něco zcela jiného"}, "correct": ["C"], "explanation": ""}, {"id": 218, "source": "Primát 111", "text": "V rámci nepřímé distribuce se využívá:", "options": {"A": "vždy přesně jeden mezičlánek", "B": "vždy služeb velkoobchodu", "C": "nevyužívá se žádný mezičlánek", "D": "jakýkoliv počet mezičlánků"}, "correct": ["D"], "explanation": ""}, {"id": 219, "source": "Primát 111", "text": "Užitím strategie „PUSH\":", "options": {"A": "výrobce nejprve osloví spotřebitele, ten pak požaduje nabízený produkt po maloobchodníkovi, ten po velkoobchodníkovi, a on po výrobci", "B": "výrobce působí na velkoobchod, ten pak na maloobchod, ton pak na spotřebitele", "C": "výrobce ovlivňuje jak spotřebitele, tak velko-i maloobchod současně", "D": "cenová strategie snažící se díky nízkým cenám penetrovat trh"}, "correct": ["B"], "explanation": ""}, {"id": 220, "source": "Primát 111", "text": "Pro strategickou podnikatelskou jednotku je charakteristické", "options": {"A": "že má vlastní, relativně samostatné vedení, vlastní technologii a uspokojuje potřeby stejné cílové skupiny, resp. poskytuje produkty stejné užitné hodnoty", "B": "že má ve své struktuře marketingové odděleni", "C": "že je umístěna mimo lokalitu sídla firmy", "D": "je řízena výhradně vedoucím marketingového oddělení"}, "correct": ["A"], "explanation": ""}, {"id": 221, "source": "Primát 111", "text": "Trh organizovaných kupců (průmyslový trh) je charakterizován mimo jiné i tím, že:", "options": {"A": "mezi oběma trhy (B2B a B2C) není výrazný vzájemný vztah", "B": "poptávka tohoto trhu není odvozena od poptávky na trhu spotřebitelském", "C": "je na něm větší počet zákazníků než na trhu B2C", "D": "poptávka tohoto trhu je odvozena od poptávky na trhu spotřebitelském"}, "correct": ["D"], "explanation": ""}, {"id": 222, "source": "Primát 111", "text": "Prodejní cesty na spotřebitelském trhu", "options": {"A": "mohou jít pouze přes velkoobchod a maloobchod, vždy však musí mít k dispozici prodejní prostory", "B": "prodej zboží bez prodejních prostor nelze realizovat ani výrobcem, ani velkoobchodem či maloobchodem", "C": "nemusí jít přes velkoobchod a maloobchod, dokonce v některých případech nemusí být k dispozici ani prodejní prostory", "D": "mohou mít až 9 různých typů úrovní"}, "correct": ["C"], "explanation": ""}, {"id": 223, "source": "Primát 111", "text": "Předmětem propagace v Public Relations je", "options": {"A": "image celé firmy", "B": "image všech produktů firmy", "C": "image konkrétního produktu", "D": "vlastnosti produktu"}, "correct": ["A"], "explanation": ""}, {"id": 224, "source": "Primát 111", "text": "Nevýhodou otevřených otázek je", "options": {"A": "omezený přísun informaci nemožnost", "B": "vyhodnocení dotazníků ve velkých souborech", "C": "možnost odpovídat nepravdivé", "D": "odpovědi se nemusejí kódovat"}, "correct": ["B"], "explanation": ""}, {"id": 225, "source": "Primát 111", "text": "Reklama používá převážně", "options": {"A": "komunikaci nepřímou", "B": "komunikaci přímou", "C": "komunikaci dvoustupňovou", "D": "digitální komunikaci"}, "correct": ["A"], "explanation": ""}, {"id": 226, "source": "Primát 111", "text": "Strategie posílení trhu\" představuje", "options": {"A": "zavádění nového produktu na nové trhy", "B": "zavádění stávajícího produktu na stávající trhy", "C": "zavedeni věrnostního programu", "D": "zavádění stávajícího produktu na nové trhy"}, "correct": ["B"], "explanation": ""}, {"id": 227, "source": "Primát 111", "text": "Při zavádění výrobku nu spotřebitelském trhu budou z komunikačního mixu nejdůležitější", "options": {"A": "reklama a publicita", "B": "reklama a osobní prodej", "C": "reklama a podpora prodeje", "D": "PR a osobní prodej"}, "correct": ["A"], "explanation": ""}, {"id": 228, "source": "Primát 111", "text": "Produkty náležející v matici portfolia (BCG) do kvadrantu „hvězdy\":", "options": {"A": "ještě nepřinášejí zisk, neboť výnosy jsou vkládány do celého marketingového mixu za účelem získání max, podílu na trhu", "B": "vždy přinášejí zisk", "C": "z důvodů prosazení se na trhu jsou ještě ztrátové", "D": "se vyznačují nízkým relativním tržním podílem"}, "correct": ["A"], "explanation": ""}, {"id": 229, "source": "Primát 111", "text": "Rozšířený produkt představuje", "options": {"A": "dovybavení základního produktu přídavným zařízením (např. k počítači je rozšířeným produktem tiskárna, monitor, klávesnice)", "B": "materiál, konstrukci, design, kvalitu, značku a obal", "C": "služby, instalaci, instruktáž, záruky, leasing", "D": "zavedeni TQM standardů"}, "correct": ["C"], "explanation": ""}, {"id": 230, "source": "Primát 111", "text": "S komplexním chováním spotřebitele se setkáváme při nákupu", "options": {"A": "potravin, cukrovinek, hygienických potřeb", "B": "podlahových krytin, nátěrů a barev", "C": "automobilu, rodinného domu", "D": "např. LEGO a panenky Barbie, protože kupující nebývá koncovým uživatelem produktu"}, "correct": ["C"], "explanation": ""}, {"id": 231, "source": "Primát 111", "text": "Výrobková podnikatelská koncepce je založena", "options": {"A": "podpoře prodejů marketingovým výzkumem na straně zákazníků", "B": "na hromadné výrobě, zisk z jednoho prodaného kusu je velký", "C": "na hromadné výrobě, zisk z jednoho prodaného kusu je malý", "D": "spíše na zakázkové výrobě, zisk z jednoho prodaného kusu je velký"}, "correct": ["D"], "explanation": ""}, {"id": 232, "source": "Primát 111", "text": "Stanovení pozice „positioningu\" produktu na trhu", "options": {"A": "je prosazení produktu na trhu pomoci cenové strategie", "B": "je zařazení produktu do matice BCG analýzy portfolia", "C": "je boj o mysl zákazníka, vysvětluje filosofii produktu, image firmy i jejího zboží, předchází jeho nesprávnému pochopeni", "D": "využití vhodně zvoleného marketingového nástroje pro vybraný segment"}, "correct": ["C"], "explanation": ""}, {"id": 233, "source": "Primát 111", "text": "K analýze prostředí používáme nejčastěji", "options": {"A": "SWOT analýzu", "B": "model AIDA", "C": "analýzu portfolia", "D": "metodu penetrace trhu"}, "correct": ["A"], "explanation": ""}, {"id": 234, "source": "Primát 111", "text": "Škály používáme v dotazníku:", "options": {"A": "tam, kde k popsání jevu by bylo zapotřebí mnoha slov, kdy respondent nemá k popsání zkoumaného jevu dostatečnou slovní zásobu", "B": "abychom rozčlenili míru postoje k sledovanému jevu", "C": "abychom udrželi pozornost respondenta", "D": "zejména v rámci focus groups"}, "correct": ["B"], "explanation": ""}, {"id": 235, "source": "Primát 111", "text": "Druhy chování spotřebitele jsou výsledkem vztahu", "options": {"A": "mezi mírou zaujetí při koupi a diferencovaným či nediferencovaným produktem", "B": "mezi potřebami jedince a členů referenční skupiny", "C": "mezi kupní silou spotřebitele a formou nabídky zboží", "D": "zkušenosti s produktem a motivací ke koupi"}, "correct": ["A"], "explanation": ""}, {"id": 236, "source": "Primát 111", "text": "Mrtvý bod", "options": {"A": "je průsečíkem přímek variabilních a fixních nákladů a udává počet nadbytečných výrobků, které již nebudou přinášet zisk", "B": "je průsečíkem přímek celkových nákladů a celkových příjmů, udává kolík výrobků je nutno prodat, aby každý další prodaný výrobek za tímto bodem již přinášel zisk", "C": "je průsečíkem přímek ročního tempa růstu a podílu na trhu a rozhoduje o přesunu výrobku z dojných krav do psů", "D": "bod, kdy delší dobu nerostou marginální zisky"}, "correct": ["B"], "explanation": ""}, {"id": 237, "source": "Primát 111", "text": "Ochrannou známkou je", "options": {"A": "specifické označení pouze generického zboží", "B": "pouze značka, která byla na základě způsobilosti zapsána do rejstříku ochranných známek a požívá tudíž právní ochranu", "C": "jakákoli značka používaná a propagována firmou", "D": "značka udělovaná Ministerstvem průmyslu a obchodu kvalitním produktům"}, "correct": ["B"], "explanation": ""}, {"id": 238, "source": "Primát 111", "text": "Otázka: „Proč nakupujete v supermarketu?\" spadá do výzkumu:", "options": {"A": "kvantitativního", "B": "kauzálního", "C": "experimentálního", "D": "kvalitativního"}, "correct": ["D"], "explanation": ""}, {"id": 239, "source": "Primát 111", "text": "Cílem výrobce je prodat to, co vyrobil, nikoliv vyrobit to, co by prodal – je typické pro podnikatelskou koncepci", "options": {"A": "sociální", "B": "výrobní", "C": "prodejní", "D": "výrobkovou"}, "correct": ["C"], "explanation": ""}, {"id": 240, "source": "Primát 111", "text": "Vysoká natalita obyvatelstva je z hlediska makroprostředí jevem", "options": {"A": "kulturním", "B": "ekonomickým", "C": "sociálním", "D": "demografickým"}, "correct": ["D"], "explanation": ""}, {"id": 241, "source": "Primát 111", "text": "Rozbory hospodářské činnosti prováděné manažery firmy znamenají pro podnik z pohledu marketingového výzkumu zdroj dat", "options": {"A": "externí sekundární", "B": "interní primární", "C": "externí primární", "D": "interní sekundární"}, "correct": ["D"], "explanation": ""}, {"id": 242, "source": "Primát 111", "text": "Tzv. buzz marketing znamená", "options": {"A": "Marketing zaměřený na šíření virálních kampaní", "B": "Šířeni referencí tzv. šeptandou", "C": "Nový trend marketingu založený na šíření informací přes QR kódy", "D": "Ani jedna odpověď není správná"}, "correct": ["B"], "explanation": ""}, {"id": 243, "source": "Primát 111", "text": "Získané dispozice člověka reagovat pozitivně či negativně vůči vybranému objektu označujeme jako:", "options": {"A": "učení", "B": "kultura", "C": "hodnoty", "D": "postoje"}, "correct": ["D"], "explanation": ""}, {"id": 244, "source": "Primát 111", "text": "Situaci, kdy firma vyrábí dva či více výrobků, které se mohou lišit např. kvalitou, velikostí či jinými rysy, ale jsou nabízeny jedním propagačním mixem, označujeme jako:", "options": {"A": "výrobkově diferencovaný marketing", "B": "hromadný marketing", "C": "koncentrovaný marketing", "D": "tržně diferencovaný marketing"}, "correct": ["A"], "explanation": ""}, {"id": 245, "source": "Primát 111", "text": "Pro matici BCG neplatí charakteristika", "options": {"A": "souvisí s životním cyklem produktu", "B": "obsahuje tzv. „otazníky\", „psy\", „krávy\" a „hvězdy\"", "C": "je rozdělena do devíti polí", "D": "má na osách relativní podíl na trhu a tempo růstu trhu"}, "correct": ["C"], "explanation": ""}, {"id": 246, "source": "Primát 111", "text": "Otázka „Kolikrát týdně nakupujete?\" patří do marketingového výzkumu", "options": {"A": "kvalitativního", "B": "kvantitativního", "C": "experimentálního", "D": "žádná odpověď není správná"}, "correct": ["B"], "explanation": ""}, {"id": 247, "source": "Primát 111", "text": "Podle požadavků na jeho definování odpovídá marketingovému cíli tato formulace:", "options": {"A": "zvýšit hrubou marži podniku z 9% na 13% do roku 2026", "B": "přejít z distribuční cesty 3. úrovně na 2. úroveň", "C": "navrhnout vhodnější design výrobků pro zvýšení prodejů", "D": "žádná odpověď není správná"}, "correct": ["A"], "explanation": ""}, {"id": 248, "source": "Primát 111", "text": "Výstupem SWOT analýzy je", "options": {"A": "porovnání s konkurencí a řešení příčin tohoto stavu", "B": "stanovení dalších marketingových strategických kroků podniku", "C": "přehled o příležitostech", "D": "analýza prodejů a tržního podílu"}, "correct": ["B"], "explanation": ""}, {"id": 249, "source": "Primát 111", "text": "Hlavní princip multilevel marketingu spočívá v:", "options": {"A": "zkrácení distribučních cest", "B": "masové propagaci v různorodých médiích", "C": "propagaci vícečetnými kanály", "D": "je to organizační struktura marketingového oddělení vybrané firmy"}, "correct": ["A"], "explanation": ""}, {"id": 250, "source": "Primát 111", "text": "Problematika teorie životního cyklu výrobku: vyberte správné tvrzení", "options": {"A": "Produkt vždy projde všemi fázemi cyklu", "B": "Většinou produkt prochází třemi fázemi cyklu", "C": "Je znázorněna modelovou „S – křivkou\"", "D": "Nesouvisí s maticí BCG"}, "correct": ["C"], "explanation": ""}, {"id": 251, "source": "Primát 111", "text": "Do psychografických kritérií segmentace nezařezujeme:", "options": {"A": "profesi", "B": "příslušnost k určité sociální třídě", "C": "bydliště", "D": "životní styl"}, "correct": ["C"], "explanation": ""}, {"id": 252, "source": "Primát 111", "text": "Tzv. „tradiční marketing se opírá o:", "options": {"A": "Maximalizaci počtu zákazníků", "B": "Individualizaci zákazníka", "C": "Dialog a zpětnou vazbu", "D": "Loajalitu zákazníka"}, "correct": ["A"], "explanation": ""}, {"id": 253, "source": "Primát 111", "text": "Počet výrobků ve výrobním sortimentu označujeme jako", "options": {"A": "šíři výrobního sortimentu", "B": "hloubku výrobního sortimentu", "C": "délka výrobního sortimentu", "D": "produktový mix"}, "correct": ["C"], "explanation": ""}, {"id": 254, "source": "Primát 111", "text": "Poptávka po zboží se dle zákona klesající poptávky mění", "options": {"A": "v opačném směru než cena", "B": "ve stejném směru jako cena", "C": "v opačném směru než objem výroby", "D": "ve stejném směru jako objem výroby"}, "correct": ["A"], "explanation": ""}, {"id": 255, "source": "Primát 111", "text": "Frančíza patří mezi:", "options": {"A": "horizontální marketingové systémy", "B": "vertikální marketingové systémy", "C": "diagonální marketingové systém", "D": "progresivní marketingové systémy"}, "correct": ["B"], "explanation": ""}, {"id": 256, "source": "Primát 111", "text": "Komunikační strategie založená na podpoře a vyvolání poptávky zákazníků se nazývá", "options": {"A": "strategie tlaku", "B": "strategie tahu", "C": "strategie penetrace", "D": "strategie sbírání smetany"}, "correct": ["B"], "explanation": ""}, {"id": 257, "source": "Primát 111", "text": "POS (POP) materiály znamenají:", "options": {"A": "reklama v místě prodeje", "B": "poprodejní servis v rámci rozšířeného produktu", "C": "nadlinkové aktivity komunikace", "D": "prodloužená záruka"}, "correct": ["A"], "explanation": ""}, {"id": 258, "source": "Primát 111", "text": "Do direkt marketingu nepatří", "options": {"A": "direct mail", "B": "sponzoring", "C": "katalogový prodej", "D": "žádná odpověď není správná"}, "correct": ["B"], "explanation": ""}, {"id": 259, "source": "Primát 111", "text": "Matice BCG pracuje s proměnnými", "options": {"A": "atraktivita trhu a tržby z prodejů", "B": "relativní tržní podíl a velikost trhu", "C": "relativní tržní podíl a tempo růstu trhu", "D": "atraktivita trhu a konkurenční postavení"}, "correct": ["C"], "explanation": ""}, {"id": 260, "source": "Primát 111", "text": "Analýza konkurence patří do", "options": {"A": "analýz mezoprostředí", "B": "portfolio analýz", "C": "obdoba BCG matice", "D": "analýz makroprostředí"}, "correct": ["A"], "explanation": ""}, {"id": 261, "source": "Primát 111", "text": "Telemarketing řadíme mezi nástroje", "options": {"A": "reklamy", "B": "direkt marketingu", "C": "podpory prodeje", "D": "sponzoringu"}, "correct": ["B"], "explanation": ""}, {"id": 262, "source": "Primát 111", "text": "Hloubka produktové řady je dána", "options": {"A": "celkovým počtem výrobků", "B": "počtem typů výrobků v produktové řadě", "C": "rozměry daného produktu", "D": "počtem výrobních (výrobkových, produktových) řad"}, "correct": ["B"], "explanation": ""}, {"id": 263, "source": "Primát 111", "text": "Mezi základní metody stanovení ceny v rámci cenotvorby neřadíme", "options": {"A": "dle rozsahu výroby", "B": "dle konkurence", "C": "dle nákladů", "D": "dle hodnoty vnímané zákazníkem"}, "correct": ["A"], "explanation": ""}, {"id": 264, "source": "Primát 111", "text": "Typickým příkladem extenzivního nákupního chování na B2C trhu je:", "options": {"A": "nákup nového trička", "B": "koupě knížky", "C": "nákup mléka pro výrobu sýrů", "D": "nákup nového počítače"}, "correct": ["D"], "explanation": ""}, {"id": 265, "source": "Primát 111", "text": "Výroční zpráva vybrané firmy patří pro vybranou firmu mezi", "options": {"A": "primám interní zdroj informaci", "B": "sekundární interní zdroj informaci", "C": "primární externí zdroj informaci", "D": "sekundární externí zdroj Informací"}, "correct": ["B"], "explanation": ""}, {"id": 266, "source": "Primát 111", "text": "Součástí analýzy mezoprostředí není", "options": {"A": "analýza mínění veřejnosti", "B": "analýza konkurenčních aktivit", "C": "analýza demografie", "D": "analýza potenciálních dodavatelů"}, "correct": ["C"], "explanation": ""}, {"id": 267, "source": "Primát 111", "text": "Životní cyklus produktu má podobnost s:", "options": {"A": "benchmarkingem", "B": "mystery shoppingem", "C": "s portfolio maticí", "D": "undercover marketingem"}, "correct": ["C"], "explanation": ""}, {"id": 268, "source": "Primát 111", "text": "Tzv. cílový trh tvoří", "options": {"A": "zákazníci, kteří jsou osloveni marketingovým mixem a uvažují o koupi", "B": "zákazníci, kteří mají potřebu daný produkt vlastnit", "C": "zákazníci, kteří již daný produkt vlastní", "D": "potenciální trh, který není saturován"}, "correct": ["A"], "explanation": ""}, {"id": 269, "source": "Primát 111", "text": "Mezi současné marketingové trendy nepatři:", "options": {"A": "společenská zodpovědnost", "B": "virální kampaně", "C": "výrobní podnikatelská koncepce", "D": "sociální marketing"}, "correct": ["C"], "explanation": ""}, {"id": 270, "source": "Primát 111", "text": "Do podpory prodeje jakožto nástroje marketingové komunikace nelze zahnout:", "options": {"A": "loterie", "B": "ochutnávky", "C": "věrnostní programy", "D": "sponzoring"}, "correct": ["D"], "explanation": ""}, {"id": 271, "source": "Primát 111", "text": "Sdílený (cause related) marketing Ize charakterizovat jako:", "options": {"A": "společné distribuční cesty pro více firem", "B": "marketingové strategie sdílené dvěma konkurenty", "C": "koncept charity, v němž jsou výrazně zapojeni i zákazníci", "D": "marketing orientovaný na okamžitý efekt"}, "correct": ["C"], "explanation": ""}, {"id": 272, "source": "Primát 111", "text": "Pro chování kupujících na B2B trzích je typické:", "options": {"A": "Pro chování kupujících na B2B trzích je typické:", "B": "převaha emocionálních aspektů", "C": "poptávka subjektů je cenově velmi pružná", "D": "odvozená poptávka"}, "correct": ["D"], "explanation": ""}, {"id": 273, "source": "Primát 111", "text": "Zákaznické soutěže řadíme v rámci marketingového mixu do:", "options": {"A": "produktu", "B": "ceny", "C": "komunikace", "D": "distribuce"}, "correct": ["C"], "explanation": ""}];
+
+// State
+let settings = { source: 'all', batch: 25, order: 'sequential' };
+let quiz = { questions: [], currentIdx: 0, wrongIds: new Set(), sessionWrong: [], answered: false, selectedOptions: new Set() };
+let wrongAnswers = JSON.parse(localStorage.getItem('wrongAnswers') || '{}'); // {id: {text, yourAnswer, correct}}
+let browseFilter = 'all';
+let currentRange = 0;
+let ranges = [];
+
+function selectOpt(group, btn) {
+  document.querySelectorAll(`#${group}-group .btn-opt`).forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  settings[group] = btn.dataset.value;
+  updateRanges();
+}
+
+function getFilteredPool() {
+  let pool = QUESTIONS;
+  if (settings.source === 'm162') pool = QUESTIONS.filter(q => q.source === 'Marketing 162');
+  else if (settings.source === 'p111') pool = QUESTIONS.filter(q => q.source === 'Primát 111');
+  else if (settings.source === 'wrong') pool = QUESTIONS.filter(q => wrongAnswers[q.id]);
+  return pool;
+}
+
+function updateRanges() {
+  let pool = getFilteredPool();
+  let batchSize = settings.batch === 'all' ? pool.length : parseInt(settings.batch);
+  ranges = [];
+  for (let i = 0; i < pool.length; i += batchSize) {
+    ranges.push({ start: i, end: Math.min(i + batchSize, pool.length), label: `${i+1}–${Math.min(i+batchSize, pool.length)}` });
+  }
+  const container = document.getElementById('range-buttons');
+  const info = document.getElementById('range-info');
+  info.textContent = `(${pool.length} otázek, dávky po ${batchSize === pool.length ? 'všech' : batchSize})`;
+  
+  if (settings.batch === 'all') {
+    container.innerHTML = '<span style="color:#888;font-size:13px">Všechny otázky najednou – výběr rozsahu není dostupný</span>';
+    currentRange = 0;
+    document.getElementById('range-card').style.display = 'none';
+    return;
+  }
+  document.getElementById('range-card').style.display = 'block';
+  container.innerHTML = '';
+  ranges.forEach((r, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'btn-opt' + (idx === currentRange ? ' selected' : '');
+    btn.textContent = r.label;
+    btn.onclick = () => {
+      document.querySelectorAll('#range-buttons .btn-opt').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      currentRange = idx;
+    };
+    container.appendChild(btn);
+  });
+}
+
+// order buttons handled via selectOpt
+
+function startQuiz() {
+  let pool = getFilteredPool();
+  if (pool.length === 0) { alert('Žádné otázky v tomto výběru!'); return; }
+  
+  let selected;
+  if (settings.batch === 'all') {
+    selected = settings.order === 'random' ? [...pool].sort(() => Math.random() - 0.5) : pool;
+  } else {
+    let r = ranges[currentRange] || ranges[0];
+    selected = pool.slice(r.start, r.end);
+    if (settings.order === 'random') selected = [...selected].sort(() => Math.random() - 0.5);
+  }
+  
+  quiz.questions = selected;
+  quiz.currentIdx = 0;
+  quiz.wrongIds = new Set();
+  quiz.sessionWrong = [];
+  quiz.answered = false;
+  quiz.queue = [...selected]; // queue to repeat wrong ones
+  
+  showPage('quiz');
+  document.getElementById('nav-quiz').style.display = '';
+  renderQuestion();
+}
+
+function renderQuestion() {
+  if (quiz.queue.length === 0) { showResults(); return; }
+  
+  const q = quiz.queue[0];
+  quiz.answered = false;
+  quiz.selectedOptions = new Set();
+  const isMulti = q.correct.length > 1;
+  
+  document.getElementById('quiz-question').textContent = q.text;
+  const srcBadge = document.getElementById('quiz-source-badge');
+  srcBadge.innerHTML = `<span class="source-label ${q.source === 'Marketing 162' ? 'src-m162' : 'src-p111'}">${q.source}</span>`;
+  
+  document.getElementById('multi-hint').style.display = isMulti ? 'block' : 'none';
+  document.getElementById('btn-confirm').style.display = isMulti ? 'inline-block' : 'none';
+  document.getElementById('btn-next').style.display = 'none';
+  
+  const optContainer = document.getElementById('quiz-options');
+  optContainer.innerHTML = '';
+  
+  const letters = Object.keys(q.options).sort();
+  letters.forEach(letter => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.innerHTML = `<span class="letter">${letter}</span><span>${q.options[letter]}</span>`;
+    btn.onclick = () => handleAnswer(letter, btn, q, isMulti);
+    optContainer.appendChild(btn);
+  });
+  
+  document.getElementById('quiz-feedback').style.display = 'none';
+  document.getElementById('quiz-explanation').style.display = 'none';
+  
+  updateProgress();
+}
+
+function handleAnswer(letter, btn, q, isMulti) {
+  if (quiz.answered && !isMulti) return;
+  
+  if (isMulti) {
+    if (quiz.answered) return;
+    if (quiz.selectedOptions.has(letter)) {
+      quiz.selectedOptions.delete(letter);
+      btn.style.background = '';
+      btn.style.borderColor = '';
+    } else {
+      quiz.selectedOptions.add(letter);
+      btn.style.background = '#e8f0fe';
+      btn.style.borderColor = '#1a73e8';
+    }
+    return;
+  }
+  
+  // Single answer
+  quiz.answered = true;
+  const isCorrect = q.correct.includes(letter);
+  
+  // Disable all buttons
+  document.querySelectorAll('.option-btn').forEach(b => b.disabled = true);
+  
+  // Mark correct answers green
+  q.correct.forEach(cl => {
+    document.querySelectorAll('.option-btn').forEach(b => {
+      if (b.querySelector('.letter').textContent === cl) b.classList.add('correct');
+    });
+  });
+  
+  if (!isCorrect) {
+    btn.classList.add('wrong');
+    markWrong(q, letter);
+    showFeedback(false, `Správná odpověď: ${q.correct.join(', ')}) ${q.correct.map(c => q.options[c]).join(' / ')}`, q.explanation);
+  } else {
+    // If was in wrong list from this session, still keep wrong count but show success
+    showFeedback(true, '✓ Správně!', q.explanation);
+    // Remove from queue's repeat if needed
+    quiz.queue.shift();
+    document.getElementById('btn-next').style.display = 'inline-block';
+    updateProgress();
+    return;
+  }
+  
+  // Wrong: move to end of queue for repeat
+  quiz.queue.shift();
+  quiz.queue.push(q);
+  document.getElementById('btn-next').style.display = 'inline-block';
+  updateProgress();
+}
+
+function confirmMulti() {
+  const q = quiz.queue[0];
+  if (quiz.selectedOptions.size === 0) { alert('Vyber alespoň jednu odpověď!'); return; }
+  quiz.answered = true;
+  
+  const selectedArr = Array.from(quiz.selectedOptions).sort();
+  const correctArr = [...q.correct].sort();
+  const isCorrect = JSON.stringify(selectedArr) === JSON.stringify(correctArr);
+  
+  document.querySelectorAll('.option-btn').forEach(b => b.disabled = true);
+  
+  // Mark correct
+  q.correct.forEach(cl => {
+    document.querySelectorAll('.option-btn').forEach(b => {
+      if (b.querySelector('.letter').textContent === cl) b.classList.add('correct');
+    });
+  });
+  
+  // Mark wrong selections
+  quiz.selectedOptions.forEach(sl => {
+    if (!q.correct.includes(sl)) {
+      document.querySelectorAll('.option-btn').forEach(b => {
+        if (b.querySelector('.letter').textContent === sl) b.classList.add('wrong');
+      });
+    }
+  });
+  
+  document.getElementById('btn-confirm').style.display = 'none';
+  document.getElementById('btn-next').style.display = 'inline-block';
+  
+  if (isCorrect) {
+    showFeedback(true, '✓ Správně!', q.explanation);
+    quiz.queue.shift();
+  } else {
+    markWrong(q, selectedArr.join(','));
+    showFeedback(false, `Správná odpověď: ${q.correct.join(' + ')}`, q.explanation);
+    quiz.queue.shift();
+    quiz.queue.push(q);
+  }
+  updateProgress();
+}
+
+function markWrong(q, yourAnswer) {
+  quiz.wrongIds.add(q.id);
+  if (!wrongAnswers[q.id]) {
+    wrongAnswers[q.id] = { text: q.text, yourAnswer: yourAnswer, correct: q.correct.join(','), source: q.source, options: q.options };
+    localStorage.setItem('wrongAnswers', JSON.stringify(wrongAnswers));
+  }
+  updateWrongCounter();
+}
+
+function updateWrongCounter() {
+  const n = quiz.wrongIds.size;
+  document.getElementById('wrong-counter').textContent = `❌ ${n} k opakování`;
+  document.getElementById('wrong-count-h').textContent = Object.keys(wrongAnswers).length;
+  if (Object.keys(wrongAnswers).length > 0) document.getElementById('wrong-counter-header').style.display = '';
+}
+
+function showFeedback(correct, msg, explanation) {
+  const fb = document.getElementById('quiz-feedback');
+  fb.className = 'feedback ' + (correct ? 'correct-fb' : 'wrong-fb');
+  fb.textContent = msg;
+  fb.style.display = 'block';
+  if (explanation) {
+    const ex = document.getElementById('quiz-explanation');
+    ex.textContent = explanation;
+    ex.style.display = 'block';
+  }
+}
+
+function nextQuestion() {
+  document.getElementById('btn-next').style.display = 'none';
+  renderQuestion();
+}
+
+function updateProgress() {
+  const total = quiz.questions.length;
+  const done = total - new Set(quiz.queue.map(q => q.id)).size + (quiz.queue.length > 0 ? 0 : 0);
+  // Progress: how many unique questions answered correctly
+  const uniqueInQueue = new Set(quiz.queue.map(q => q.id)).size;
+  const correctDone = total - uniqueInQueue;
+  const pct = total > 0 ? Math.round((correctDone / total) * 100) : 100;
+  document.getElementById('quiz-progress-fill').style.width = pct + '%';
+  document.getElementById('quiz-qnum').textContent = `Správně ${correctDone} / ${total} | Fronta: ${quiz.queue.length}`;
+}
+
+function endQuiz() {
+  showResults();
+}
+
+function showResults() {
+  showPage('results');
+  const total = quiz.questions.length;
+  const wrong = quiz.wrongIds.size;
+  const correct = total - wrong;
+  const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
+  document.getElementById('res-score').textContent = pct + '%';
+  document.getElementById('res-correct').textContent = correct;
+  document.getElementById('res-wrong').textContent = wrong;
+  document.getElementById('res-total').textContent = total;
+  document.getElementById('retry-wrong-btn').style.display = wrong > 0 ? '' : 'none';
+}
+
+function retryWrong() {
+  settings.source = 'wrong';
+  startQuiz();
+}
+
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  const navBtns = { setup: 0, quiz: 1, browse: 2, wrong: 3, results: -1 };
+  const idx = navBtns[name];
+  if (idx >= 0) document.querySelectorAll('nav button')[idx].classList.add('active');
+  if (name === 'browse') renderBrowse();
+  if (name === 'wrong') renderWrong();
+}
+
+// BROWSE
+let browseAll = [...QUESTIONS];
+function filterBrowse() {
+  const query = document.getElementById('search-input').value.toLowerCase();
+  let filtered = QUESTIONS;
+  if (browseFilter === 'm162') filtered = filtered.filter(q => q.source === 'Marketing 162');
+  else if (browseFilter === 'p111') filtered = filtered.filter(q => q.source === 'Primát 111');
+  if (query.length > 1) {
+    filtered = filtered.filter(q => 
+      q.text.toLowerCase().includes(query) || 
+      Object.values(q.options).some(v => v.toLowerCase().includes(query))
+    );
+  }
+  renderBrowseList(filtered);
+}
+
+function selectBrowseFilter(btn, val) {
+  document.querySelectorAll('.filter-row .btn-opt').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  browseFilter = val;
+  filterBrowse();
+}
+
+function renderBrowse() { filterBrowse(); }
+function renderBrowseList(list) {
+  const container = document.getElementById('browse-list');
+  document.getElementById('browse-count').textContent = `Zobrazeno: ${list.length} otázek`;
+  container.innerHTML = '';
+  list.forEach(q => {
+    const div = document.createElement('div');
+    div.className = 'browse-item';
+    const isWrong = wrongAnswers[q.id] ? '❌ ' : '';
+    div.innerHTML = `
+      <div class="q-num">#${q.id} · <span class="source-label ${q.source === 'Marketing 162' ? 'src-m162' : 'src-p111'}">${q.source}</span> ${isWrong}</div>
+      <div class="q-text">${q.text}</div>
+      <div class="q-correct">✓ ${q.correct.map(c => c + ') ' + q.options[c]).join(' | ')}</div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+// WRONG ANSWERS
+function renderWrong() {
+  const container = document.getElementById('wrong-list');
+  const entries = Object.entries(wrongAnswers);
+  if (entries.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="icon">✅</div><div>Žádné špatné odpovědi!</div></div>';
+    return;
+  }
+  container.innerHTML = `<p style="color:#888;font-size:13px;margin-bottom:16px">Celkem ${entries.length} špatně zodpovězených otázek (ze všech kvízů)</p>`;
+  entries.forEach(([id, data]) => {
+    const div = document.createElement('div');
+    div.className = 'wrong-item';
+    div.innerHTML = `
+      <div class="q-num" style="font-size:11px;color:#aaa;margin-bottom:4px">#${id} · ${data.source}</div>
+      <div class="wq-text">${data.text}</div>
+      <div class="wq-correct" style="margin-top:6px">✓ Správně: ${data.correct.split(',').map(c => c + ') ' + (data.options[c]||'')).join(' | ')}</div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function clearWrong() {
+  if (!confirm('Opravdu vymazat všechny špatné odpovědi?')) return;
+  wrongAnswers = {};
+  localStorage.setItem('wrongAnswers', JSON.stringify(wrongAnswers));
+  document.getElementById('wrong-counter-header').style.display = 'none';
+  renderWrong();
+}
+
+// Init
+updateRanges();
+updateWrongCounter();
+</script>
+</body>
+</html>
